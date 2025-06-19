@@ -6,17 +6,13 @@ WSGI entry point for production deployment
 import sys
 import os
 
-# Add current directory to Python path
-sys.path.insert(0, os.path.dirname(__file__))
+# Add src directory to Python path
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), 'src'))
 
-# Import the Flask app factory
 from production_webhook import create_app
 
-# Create the Flask app for Gunicorn
-app = create_app()
-
-# For Gunicorn compatibility (both 'app' and 'application' work)
-application = app
+# Create the WSGI application
+application = create_app()
 
 if __name__ == "__main__":
-    app.run(debug=False)
+    application.run(debug=False)
