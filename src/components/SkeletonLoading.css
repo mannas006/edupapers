@@ -1,0 +1,44 @@
+.skeleton-loading-container {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  width: 80%;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.skeleton-item {
+  background-color: #e2e8f0;
+  height: 20px;
+  border-radius: 4px;
+  animation: skeleton-loading 1.5s linear infinite alternate;
+}
+
+.skeleton-item:nth-child(1) {
+  width: 100%;
+}
+
+.skeleton-item:nth-child(2) {
+  width: 80%;
+}
+
+.skeleton-item:nth-child(3) {
+  width: 60%;
+}
+
+.skeleton-item:nth-child(4) {
+  width: 90%;
+}
+
+.skeleton-item:nth-child(5) {
+  width: 70%;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-color: #e2e8f0;
+  }
+  100% {
+    background-color: #cbd5e0;
+  }
+}
