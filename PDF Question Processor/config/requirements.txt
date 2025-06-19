@@ -1,0 +1,14 @@
+PyMuPDF==1.23.8  # For PDF extraction
+pandas==2.2.0    # For data handling and CSV operations
+python-dotenv==1.0.1  # For environment variable management
+google-generativeai==0.3.2  # For Gemini API
+tqdm==4.66.2     # For progress bars
+pytesseract==0.3.10  # For OCR text extraction
+Pillow>=10.0.0   # For image processing
+supabase>=2.0.0  # For Supabase integration
+requests>=2.31.0  # For HTTP requests
+
+# Web framework dependencies
+flask>=3.0.0      # For Flask webhook handler
+flask-cors>=4.0.0 # For handling CORS in Flask
+gunicorn>=21.0.0  # For production WSGI server

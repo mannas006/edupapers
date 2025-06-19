@@ -1,0 +1,28 @@
+[Unit]
+Description=EduPapers PDF Processor Webhook Service
+After=network.target
+
+[Service]
+Type=exec
+User=www-data
+Group=www-data
+WorkingDirectory=/path/to/PDF Question Processor
+Environment=PATH=/path/to/PDF Question Processor/venv/bin
+ExecStart=/path/to/PDF Question Processor/venv/bin/gunicorn -w 4 -b 0.0.0.0:8000 wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+Restart=always
+RestartSec=3
+
+# Security settings
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/path/to/PDF Question Processor
+
+# Resource limits
+LimitNOFILE=65536
+TimeoutStopSec=30
+
+[Install]
+WantedBy=multi-user.target
