@@ -1,10 +1,9 @@
 services:
   - type: web
     name: edupapers-pdf-processor
-    env: python
+    env: docker
     plan: free
-    buildCommand: pip install -r "PDF Question Processor/config/requirements.txt"
-    startCommand: cd "PDF Question Processor" && gunicorn --bind=0.0.0.0:$PORT --workers=1 --timeout=600 wsgi:app
+    dockerfilePath: ./PDF Question Processor/Dockerfile
     envVars:
       - key: SUPABASE_URL
         value: https://dsfqdmrkryjpglrsffhc.supabase.co
@@ -18,4 +17,6 @@ services:
         value: https://edupapers.vercel.app
       - key: PYTHONUNBUFFERED
         value: "1"
+      - key: PORT
+        value: "10000"
     healthCheckPath: /health
