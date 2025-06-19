@@ -1,9 +1,13 @@
 services:
   - type: web
     name: edupapers-pdf-processor
-    env: docker
+    env: python
     plan: free
-    dockerfilePath: ./PDF Question Processor/Dockerfile
+    rootDir: PDF Question Processor
+    buildCommand: |
+      python -m pip install --upgrade pip
+      pip install --no-cache-dir -r config/requirements.txt
+    startCommand: python -m gunicorn --bind=0.0.0.0:$PORT --workers=1 --timeout=600 wsgi:app
     envVars:
       - key: SUPABASE_URL
         value: https://dsfqdmrkryjpglrsffhc.supabase.co
