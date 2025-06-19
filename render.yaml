@@ -1,0 +1,27 @@
+services:
+  - type: web
+    name: edupapers-pdf-processor
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: |
+      cd "PDF Question Processor"
+      pip install --upgrade pip
+      pip install -r config/requirements.txt
+    startCommand: |
+      cd "PDF Question Processor"
+      gunicorn --bind=0.0.0.0:$PORT --workers=2 --timeout=300 wsgi:app
+    envVars:
+      - key: SUPABASE_URL
+        value: https://dsfqdmrkryjpglrsffhc.supabase.co
+      - key: SUPABASE_SERVICE_KEY
+        sync: false  # Will be set manually for security
+      - key: GEMINI_API_KEY
+        sync: false  # Will be set manually for security
+      - key: WEBHOOK_SECRET
+        generateValue: true
+      - key: ALLOWED_ORIGINS
+        value: https://edupapers.vercel.app
+      - key: PYTHONUNBUFFERED
+        value: "1"
+    healthCheckPath: /health
