@@ -21,6 +21,7 @@
 ## 📋 Table of Contents
 
 - [Overview](#-overview)
+- [Recent Updates](#-recent-updates)
 - [Features](#-features)
 - [Architecture](#-architecture)
 - [Quick Start](#-quick-start)
@@ -48,6 +49,30 @@
 - **🔒 Secure & Scalable**: Built with modern security practices and scalable architecture
 - **📱 Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
 - **⚡ Real-time Updates**: Live progress tracking and instant feedback during processing
+
+---
+
+## 🔄 Recent Updates
+
+### Version 2.0.0 - Project Reorganization
+
+**🎯 Major Improvements:**
+- **🏗️ Restructured Architecture**: Separated frontend and backend into dedicated directories
+- **🐛 Bug Fixes**: Fixed notification issues showing "0 questions" during processing
+- **🧹 Code Cleanup**: Removed unused test files, debug scripts, and temporary files
+- **📦 Dependency Management**: Separate package.json for frontend and backend services
+- **🚀 Enhanced Deployment**: Improved build process and deployment configuration
+
+**📁 New Structure:**
+- `/frontend/` - React TypeScript application with Vite
+- `/backend/` - Node.js API server and Python AI processing engine
+- Clean separation of concerns for better maintainability
+
+**🔧 Fixed Issues:**
+- Resolved "Processing completed! Found 0 questions" false notifications
+- Fixed hardcoded "0" display during PDF processing
+- Improved error handling and user feedback
+- Updated all internal references and import paths
 
 ---
 
@@ -103,32 +128,40 @@ graph TB
 
 ```
 EduPapers/
-├── 📂 src/                     # Frontend application
-│   ├── 📂 components/          # Reusable React components
-│   ├── 📂 pages/              # Application pages
-│   ├── 📂 contexts/           # React contexts (Auth, etc.)
-│   ├── 📂 hooks/              # Custom React hooks
-│   ├── 📂 lib/                # External integrations
-│   └── 📂 types/              # TypeScript definitions
+├── 📂 frontend/                # Frontend application
+│   ├── 📂 src/                # React source code
+│   │   ├── 📂 components/     # Reusable React components
+│   │   ├── 📂 pages/          # Application pages
+│   │   ├── 📂 contexts/       # React contexts (Auth, etc.)
+│   │   ├── 📂 hooks/          # Custom React hooks
+│   │   ├── 📂 lib/            # External integrations
+│   │   └── 📂 types/          # TypeScript definitions
+│   ├── 📂 public/             # Static assets
+│   ├── 📂 config/             # Build & deployment configs
+│   │   ├── vite.config.ts     # Vite configuration
+│   │   ├── tailwind.config.js # Tailwind CSS config
+│   │   └── tsconfig.json      # TypeScript config
+│   ├── index.html             # Main HTML template
+│   └── package.json           # Frontend dependencies
 │
-├── 📂 server/                  # Backend services
-│   ├── index.js               # Main API server
-│   ├── pdf-processor.js       # PDF processing service
-│   └── 📂 temp-processing/    # Temporary file storage
-│
-├── 📂 PDF Question Processor/  # AI processing engine
-│   ├── 📂 src/                # Python source code
-│   ├── 📂 config/             # Configuration files
-│   └── 📂 output/             # Processing results
-│
-├── 📂 config/                  # Build & deployment configs
-│   ├── vite.config.ts         # Vite configuration
-│   ├── tailwind.config.js     # Tailwind CSS config
-│   └── tsconfig.json          # TypeScript config
+├── 📂 backend/                 # Backend services
+│   ├── 📂 server/             # Node.js API server
+│   │   ├── index.js           # Main API server
+│   │   └── pdf-processor.js   # PDF processing service
+│   ├── 📂 PDF Question Processor/ # AI processing engine
+│   │   ├── 📂 src/            # Python source code
+│   │   ├── 📂 config/         # Configuration files
+│   │   └── 📂 output/         # Processing results
+│   ├── 📂 temp-processing/    # Temporary file storage
+│   ├── package.json           # Backend Node.js dependencies
+│   ├── requirements.txt       # Python dependencies
+│   └── runtime.txt            # Python runtime version
 │
 ├── 📂 docs/                    # Documentation
 ├── 📂 database/                # Database schemas & migrations
-└── 📂 scripts/                 # Utility scripts
+├── 📂 scripts/                 # Utility scripts
+├── .env                        # Environment variables
+└── README.md                   # This file
 ```
 
 ---
@@ -152,6 +185,8 @@ git clone https://github.com/your-username/edupapers.git
 cd edupapers && npm install && npm run setup
 ```
 
+> **Note**: This project has been recently reorganized with separate `frontend/` and `backend/` directories for better maintainability and deployment flexibility.
+
 ### Manual Setup
 
 1. **Clone Repository**
@@ -160,21 +195,35 @@ cd edupapers && npm install && npm run setup
    cd edupapers
    ```
 
-2. **Install Dependencies**
+2. **Install Frontend Dependencies**
    ```bash
+   cd frontend
    npm install
-   cd "PDF Question Processor" && pip install -r config/requirements.txt && cd ..
+   cd ..
    ```
 
-3. **Environment Setup**
+3. **Install Backend Dependencies**
+   ```bash
+   cd backend
+   npm install
+   pip install -r requirements.txt
+   cd ..
+   ```
+
+4. **Environment Setup**
    ```bash
    cp .env.example .env
    # Configure your environment variables
    ```
 
-4. **Start Development**
+5. **Start Development**
    ```bash
+   # Start both frontend and backend
    npm run dev-with-processor
+   
+   # Or start individually:
+   npm run frontend:dev     # Frontend only
+   npm run backend:dev      # Backend only
    ```
 
 ---
@@ -263,11 +312,11 @@ VITE_FIREBASE_APP_ID=your-app-id
 
 | File | Purpose | Location |
 |------|---------|----------|
-| `vite.config.ts` | Build configuration | `/config/` |
-| `tailwind.config.js` | Styling configuration | `/config/` |
-| `tsconfig.json` | TypeScript configuration | `/config/` |
-| `eslint.config.js` | Code linting rules | `/config/` |
-| `postcss.config.js` | CSS processing | `/config/` |
+| `vite.config.ts` | Build configuration | `/frontend/config/` |
+| `tailwind.config.js` | Styling configuration | `/frontend/config/` |
+| `tsconfig.json` | TypeScript configuration | `/frontend/config/` |
+| `eslint.config.js` | Code linting rules | `/frontend/config/` |
+| `postcss.config.js` | CSS processing | `/frontend/config/` |
 
 ---
 
@@ -280,8 +329,8 @@ VITE_FIREBASE_APP_ID=your-app-id
 npm run dev-with-processor
 
 # Or start services individually
-npm run dev          # Frontend only
-npm run pdf-processor # Backend only
+npm run frontend:dev     # Frontend only (localhost:5173)
+npm run backend:dev      # Backend only (localhost:8000)
 ```
 
 ### 2. Accessing the Application
@@ -352,13 +401,13 @@ GET /health
 
 | Command | Description |
 |---------|-------------|
-| `npm run dev` | Start frontend development server |
-| `npm run pdf-processor` | Start PDF processing service |
-| `npm run dev-with-processor` | Start both services |
-| `npm run build` | Build for production |
-| `npm run preview` | Preview production build |
-| `npm run lint` | Run ESLint |
-| `npm run type-check` | Run TypeScript checks |
+| `npm run dev-with-processor` | Start both frontend and backend |
+| `npm run frontend:dev` | Start frontend development server |
+| `npm run backend:dev` | Start backend services |
+| `npm run frontend:build` | Build frontend for production |
+| `npm run frontend:preview` | Preview frontend production build |
+| `npm run frontend:lint` | Run ESLint on frontend |
+| `npm run frontend:type-check` | Run TypeScript checks |
 
 ### Development Guidelines
 
@@ -368,10 +417,34 @@ GET /health
 4. **Documentation**: Update docs for API changes
 5. **Commits**: Use conventional commit messages
 
+### 📂 Working with the New Structure
+
+**Frontend Development:**
+```bash
+cd frontend
+npm run dev          # Start frontend dev server
+npm run build        # Build for production
+npm run lint         # Run linting
+npm run type-check   # TypeScript validation
+```
+
+**Backend Development:**
+```bash
+cd backend
+npm run start        # Start Node.js server
+python -m src.main   # Run Python processor directly
+```
+
+**Full Stack Development:**
+```bash
+# From project root
+npm run dev-with-processor  # Start both services
+```
+
 ### Project Structure Details
 
 ```
-src/
+frontend/src/
 ├── components/          # Reusable UI components
 │   ├── Navbar.tsx      # Navigation component
 │   ├── UniversityCard.tsx # University display card
@@ -390,6 +463,15 @@ src/
 └── types/              # TypeScript type definitions
     ├── index.ts        # Common types
     └── supabase.ts     # Database types
+
+backend/
+├── server/             # Node.js API services
+│   ├── index.js        # Main API server
+│   └── pdf-processor.js # PDF processing service
+├── PDF Question Processor/ # Python AI engine
+│   ├── src/            # Python source code
+│   └── config/         # Configuration files
+└── temp-processing/    # Temporary file storage
 ```
 
 ---
@@ -438,7 +520,8 @@ node scripts/show-structure.js
 ### Production Build
 
 ```bash
-# Build the application
+# Build the frontend application
+cd frontend
 npm run build
 
 # Preview the build
