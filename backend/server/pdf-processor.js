@@ -14,8 +14,8 @@ import crypto from 'crypto';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Load environment variables from parent directory
-dotenv.config({ path: path.join(__dirname, '..', '.env') });
+// Load environment variables from project root
+dotenv.config({ path: path.join(__dirname, '..', '..', '.env') });
 
 // Initialize Supabase client
 const supabaseUrl = process.env.VITE_SUPABASE_URL;

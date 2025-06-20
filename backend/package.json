@@ -1,0 +1,21 @@
+{
+  "name": "edupapers-backend",
+  "version": "1.0.0",
+  "description": "EduPapers Backend - PDF Processing Server",
+  "type": "module",
+  "main": "server/pdf-processor.js",
+  "scripts": {
+    "start": "node server/pdf-processor.js",
+    "dev": "node server/pdf-processor.js"
+  },
+  "dependencies": {
+    "express": "^4.18.0",
+    "cors": "^2.8.5",
+    "dotenv": "^16.5.0",
+    "@supabase/supabase-js": "^2.50.0",
+    "uuid": "^9.0.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
