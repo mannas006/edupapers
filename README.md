@@ -54,6 +54,21 @@
 
 ## 🔄 Recent Updates
 
+### Version 2.1.0 - Backend Structure Optimization
+
+**🏗️ Backend Improvements:**
+- **📁 Streamlined Structure**: Moved all Python processing files to `backend/src/` for better organization
+- **🚀 Cleaner Architecture**: Consolidated AI processing logic into a single, maintainable directory
+- **🔧 Updated References**: All Node.js server references now point to the new `backend/src/` structure
+- **📦 Simplified Deployment**: More conventional backend layout for easier deployment and maintenance
+- **🧹 Code Organization**: Removed redundant directory nesting and improved code accessibility
+
+**📁 New Backend Structure:**
+- `/backend/src/` - All Python AI processing logic (main.py, gemini_client.py, etc.)
+- `/backend/server/` - Node.js API server
+- `/backend/output/` - Processing results storage
+- Clean separation with conventional naming patterns
+
 ### Version 2.0.0 - Project Reorganization
 
 **🎯 Major Improvements:**
@@ -109,7 +124,7 @@
 graph TB
     A[Frontend - React/TypeScript] --> B[API Gateway - Express.js]
     B --> C[PDF Processor - Node.js]
-    C --> D[Python AI Engine]
+    C --> D[Python AI Engine - backend/src/]
     D --> E[Google Gemini AI]
     B --> F[Supabase Backend]
     F --> G[PostgreSQL Database]
@@ -122,7 +137,34 @@ graph TB
         K --> L[Question Categorization]
         L --> M[Database Storage]
     end
+    
+    subgraph "Backend Structure"
+        D --> N[main.py - Entry Point]
+        D --> O[gemini_client.py - AI Service]
+        D --> P[pdf_extractor.py - Text Processing]
+        D --> Q[supabase_integration.py - Database]
+    end
 ```
+
+### 🎯 Architecture Benefits
+
+**Clean Separation:**
+- **Frontend** (`/frontend/`) - Pure React/TypeScript UI layer
+- **Backend API** (`/backend/server/`) - Node.js REST API and routing
+- **AI Processing** (`/backend/src/`) - Python AI and processing logic
+- **Storage** (`/backend/output/`) - Processed results and temporary files
+
+**Scalability:**
+- Microservices-ready architecture
+- Independent deployment of frontend and backend
+- Modular Python processing components
+- Clear data flow and responsibility separation
+
+**Maintainability:**
+- Conventional directory structure
+- Type-safe interfaces between layers
+- Centralized configuration management
+- Comprehensive error handling and logging
 
 ### 📁 Project Structure
 
@@ -145,13 +187,16 @@ EduPapers/
 │   └── package.json           # Frontend dependencies
 │
 ├── 📂 backend/                 # Backend services
+│   ├── 📂 src/                # Python AI processing engine
+│   │   ├── main.py            # Main processing entry point
+│   │   ├── gemini_client.py   # AI integration service
+│   │   ├── pdf_extractor.py   # PDF text extraction
+│   │   ├── supabase_integration.py # Database operations
+│   │   └── production_webhook.py   # Webhook handlers
 │   ├── 📂 server/             # Node.js API server
 │   │   ├── index.js           # Main API server
 │   │   └── pdf-processor.js   # PDF processing service
-│   ├── 📂 PDF Question Processor/ # AI processing engine
-│   │   ├── 📂 src/            # Python source code
-│   │   ├── 📂 config/         # Configuration files
-│   │   └── 📂 output/         # Processing results
+│   ├── 📂 output/             # Processing results
 │   ├── 📂 temp-processing/    # Temporary file storage
 │   ├── package.json           # Backend Node.js dependencies
 │   ├── requirements.txt       # Python dependencies
@@ -339,6 +384,18 @@ npm run backend:dev      # Backend only (localhost:8000)
 - **API Server**: http://localhost:8000
 - **Health Check**: http://localhost:8000/health
 
+### 3. Important Notes for the New Structure
+
+**Backend Python Processing:**
+- All Python files are now in `backend/src/`
+- Python dependencies: `cd backend && pip install -r requirements.txt`
+- Direct Python testing: `cd backend && python -m src.main`
+
+**Path Updates:**
+- Node.js server now references `src/main.py` instead of old paths
+- All AI processing logic consolidated in `backend/src/`
+- Output files stored in `backend/output/`
+
 ### 3. PDF Processing Workflow
 
 1. **Upload**: Drag and drop PDF files or click to browse
@@ -431,8 +488,9 @@ npm run type-check   # TypeScript validation
 **Backend Development:**
 ```bash
 cd backend
-npm run start        # Start Node.js server
-python -m src.main   # Run Python processor directly
+npm run start              # Start Node.js server
+python -m src.main         # Run Python processor directly
+pip install -r requirements.txt  # Install Python dependencies
 ```
 
 **Full Stack Development:**
@@ -468,10 +526,17 @@ backend/
 ├── server/             # Node.js API services
 │   ├── index.js        # Main API server
 │   └── pdf-processor.js # PDF processing service
-├── PDF Question Processor/ # Python AI engine
-│   ├── src/            # Python source code
-│   └── config/         # Configuration files
-└── temp-processing/    # Temporary file storage
+├── src/                # Python AI processing engine
+│   ├── main.py         # Main processing entry point
+│   ├── gemini_client.py # AI integration service  
+│   ├── pdf_extractor.py # PDF text extraction
+│   ├── supabase_integration.py # Database operations
+│   └── production_webhook.py   # Webhook handlers
+├── output/             # Processing results storage
+├── temp-processing/    # Temporary file storage
+├── package.json        # Node.js dependencies
+├── requirements.txt    # Python dependencies
+└── runtime.txt         # Python version specification
 ```
 
 ---
@@ -531,13 +596,32 @@ npm run preview
 ### Deployment Platforms
 
 #### Vercel (Recommended)
-```bash
-# Install Vercel CLI
-npm i -g vercel
 
-# Deploy
+**Frontend Deployment:**
+```bash
+# Deploy frontend only
+cd frontend
+npm install
+npm run build
 vercel --prod
 ```
+
+**Full Stack Deployment:**
+```bash
+# Deploy from project root with backend support
+vercel --prod
+```
+
+The project includes optimized Vercel configurations:
+- `vercel.json` - Root configuration for full-stack deployment
+- `frontend/vercel.json` - Frontend-specific configuration for standalone deployment
+
+**Configuration Features:**
+- Automatic build optimization for Vite frontend
+- API route handling for backend services
+- Python dependency installation for AI processing
+- Environment variable management
+- Custom headers for CORS handling
 
 #### Azure Static Web Apps
 ```bash
@@ -667,9 +751,10 @@ copies or substantial portions of the Software.
 
 ## 📊 Project Status
 
-- **Current Version**: 1.0.0
+- **Current Version**: 2.1.0
 - **Status**: Production Ready
 - **Last Updated**: June 2025
+- **Backend Structure**: ✅ Optimized & Streamlined
 - **Maintained**: ✅ Actively maintained
 - **Security**: ✅ Regular security updates
 
