@@ -239,6 +239,7 @@ app.get('/status/:processing_id', (req, res) => {
         status: status.status,
         message: status.message,
         questions_count: status.questions_count || 0,
+        questionsCount: status.status === 'completed' ? (status.questions_count || 0) : undefined,  // Only set when completed
         timestamp: status.timestamp,
         progress: status.progress || null,
         percentage: status.percentage || 0,
