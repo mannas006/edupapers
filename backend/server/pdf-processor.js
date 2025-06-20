@@ -317,9 +317,9 @@ async function processPDFAsync(processingId, fileUrl, filename, metadata, paperI
         });
 
         // Check if PDF processor exists
-        const processorPath = path.join(__dirname, '..', 'PDF Question Processor', 'src', 'main.py');
+        const processorPath = path.join(__dirname, '..', 'src', 'main.py');
         if (!fs.existsSync(processorPath)) {
-            throw new Error('PDF processor not found. Please ensure the PDF Question Processor is properly set up.');
+            throw new Error('PDF processor not found. Please ensure the Python processor is properly set up.');
         }
 
         // Run the Python PDF processor
@@ -328,7 +328,7 @@ async function processPDFAsync(processingId, fileUrl, filename, metadata, paperI
         
         // Pre-clean any existing output file  
         const originalFileName = path.parse(absoluteTempFilePath).name; // This will be the processingId_timestamp
-        const expectedOutputPath = path.join(__dirname, '..', 'PDF Question Processor', 'output', `${originalFileName}_answers.json`);
+        const expectedOutputPath = path.join(__dirname, '..', 'output', `${originalFileName}_answers.json`);
         console.log(`Will expect output at: ${expectedOutputPath}`);
         if (fs.existsSync(expectedOutputPath)) {
             fs.unlinkSync(expectedOutputPath);
@@ -336,7 +336,7 @@ async function processPDFAsync(processingId, fileUrl, filename, metadata, paperI
         }
         
         const pythonProcess = spawn('python3', [processorPath, absoluteTempFilePath], {
-            cwd: path.join(__dirname, '..', 'PDF Question Processor'),
+            cwd: path.join(__dirname, '..'),
             stdio: ['pipe', 'pipe', 'pipe']
         });
 
@@ -389,7 +389,7 @@ async function processPDFAsync(processingId, fileUrl, filename, metadata, paperI
             if (code === 0) {
                 // Success - try to read the results and store in Supabase
                 try {
-                    const outputPath = path.join(__dirname, '..', 'PDF Question Processor', 'output', `${path.parse(tempFilePath).name}_answers.json`);
+                    const outputPath = path.join(__dirname, '..', 'output', `${path.parse(tempFilePath).name}_answers.json`);
                     console.log(`Looking for output file at: ${outputPath}`);
                     console.log(`Temp file used: ${tempFilePath}`);
                     console.log(`Processing ID: ${processingId}`);
