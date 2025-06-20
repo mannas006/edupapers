@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Edit } from 'lucide-react';
 import { universities } from '../data/universities';
@@ -18,6 +18,8 @@ export default function QuestionPaperPage() {
   const [userRole, setUserRole] = useState<string | null>(null);
   const [userUniversityId, setUserUniversityId] = useState<string | null>(null);
   const [userCourseId, setUserCourseId] = useState<string | null>(null);
+  const [dataLoaded, setDataLoaded] = useState(false);
+  const lastFetchParamsRef = useRef<string>('');
 
   const formattedSubjectName = subjectName?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
 
@@ -25,60 +27,82 @@ export default function QuestionPaperPage() {
   const course = university?.courses.find((c) => c.id === courseId);
   const semesterNumber = parseInt(semester || '0', 10);
 
+  // Reset dataLoaded flag when route parameters change
   useEffect(() => {
-    const fetchQuestions = async () => {
-      setLoading(true);
-      try {
-        const { data, error } = await supabase
-          .from('questions')
-          .select('*')
-          .eq('university_id', universityId)
-          .eq('course_id', courseId)
-          .eq('semester', semester)
-          .eq('subject_name', subjectName);
+    const currentParams = `${universityId}-${courseId}-${semester}-${subjectName}`;
+    if (lastFetchParamsRef.current !== currentParams) {
+      setDataLoaded(false);
+      lastFetchParamsRef.current = currentParams;
+    }
+  }, [universityId, courseId, semester, subjectName]);
 
-        if (error) {
-          console.error('Failed to fetch questions:', error);
-          toast.error('Failed to load questions.');
-        } else if (data && data.length > 0) {
-          setQuestions(data[0].content || '');
-        } else {
-          setQuestions('');
-        }
+  const fetchQuestions = async () => {
+    const currentParams = `${universityId}-${courseId}-${semester}-${subjectName}`;
+    
+    // Prevent duplicate fetches for the same parameters
+    if (dataLoaded && lastFetchParamsRef.current === currentParams) {
+      return;
+    }
 
-        if (user) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role, university_id, course_id')
-            .eq('email', user.email)
-            .single();
+    setLoading(true);
+    try {
+      const { data, error } = await supabase
+        .from('questions')
+        .select('*')
+        .eq('university_id', universityId)
+        .eq('course_id', courseId)
+        .eq('semester', semester)
+        .eq('subject_name', subjectName);
 
-          if (profileError) {
-            console.error('Error fetching profile data:', profileError);
-            toast.error('Failed to load profile data.');
-            setUserRole(null);
-            setUserUniversityId(null);
-            setUserCourseId(null);
-          } else {
-            setUserRole(profileData?.role || null);
-            setUserUniversityId(profileData?.university_id || null);
-            setUserCourseId(profileData?.course_id || null);
-          }
-        } else {
+      if (error) {
+        console.error('Failed to fetch questions:', error);
+        toast.error('Failed to load questions.');
+      } else if (data && data.length > 0) {
+        setQuestions(data[0].content || '');
+      } else {
+        setQuestions('');
+      }
+
+      if (user) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('role, university_id, course_id')
+          .eq('email', user.email)
+          .single();
+
+        if (profileError) {
+          console.error('Error fetching profile data:', profileError);
+          toast.error('Failed to load profile data.');
           setUserRole(null);
           setUserUniversityId(null);
           setUserCourseId(null);
+        } else {
+          setUserRole(profileData?.role || null);
+          setUserUniversityId(profileData?.university_id || null);
+          setUserCourseId(profileData?.course_id || null);
         }
-      } catch (error) {
-        console.error('Error in fetchQuestions:', error);
-        toast.error('An error occurred while loading questions.');
-      } finally {
-        setLoading(false);
+      } else {
+        setUserRole(null);
+        setUserUniversityId(null);
+        setUserCourseId(null);
       }
-    };
+      
+      setDataLoaded(true);
+      lastFetchParamsRef.current = currentParams;
+    } catch (error) {
+      console.error('Error in fetchQuestions:', error);
+      toast.error('An error occurred while loading questions.');
+    } finally {
+      setLoading(false);
+    }
+  };
 
-    fetchQuestions();
-  }, [universityId, courseId, semester, subjectName, user]);
+  useEffect(() => {
+    // Only fetch if data hasn't been loaded for current parameters
+    if (!dataLoaded) {
+      fetchQuestions();
+    }
+  }, [dataLoaded]);
 
   if (!university || !course || !semesterNumber || !course.subjects || !course.subjects[semesterNumber]) {
     return <div className="min-h-[80vh] flex items-center justify-center">Subjects not found</div>;
