@@ -43,13 +43,10 @@ import {
   Info as InfoIcon,
   Phone as PhoneIcon,
   AccountCircle as AccountCircleIcon,
-  DarkMode as DarkModeIcon,
-  LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
-import { useDarkMode } from '../contexts/DarkModeContext';
 import useDebounce from '../hooks/useDebounce';
 import { allSearchableSubjects } from '../data/universities';
 import type { SearchableSubject } from '../types';
@@ -60,7 +57,6 @@ export default function Navbar() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { isDarkMode, toggleDarkMode } = useDarkMode();
   
   // State management
   const [displayName, setDisplayName] = useState('');
@@ -236,32 +232,6 @@ export default function Navbar() {
           }}
           sx={{ mb: 2 }}
         />
-        
-        {/* Dark Mode Toggle */}
-        <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 1 }}>
-          <Typography variant="body2" sx={{ fontWeight: 500 }}>
-            Dark Mode
-          </Typography>
-          <IconButton 
-            onClick={(e) => {
-              const rect = e.currentTarget.getBoundingClientRect();
-              const originPosition = {
-                x: rect.left + rect.width / 2,
-                y: rect.top + rect.height / 2,
-              };
-              toggleDarkMode(originPosition);
-            }}
-            size="small"
-            sx={{ 
-              color: 'text.secondary',
-              '&:hover': { 
-                backgroundColor: alpha(theme.palette.primary.main, 0.04) 
-              }
-            }}
-          >
-            {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
-          </IconButton>
-        </Box>
       </Box>
 
       <Divider />
@@ -339,12 +309,9 @@ export default function Navbar() {
         position="sticky" 
         elevation={0}
         sx={{ 
-          backgroundColor: isDarkMode 
-            ? 'rgba(30, 41, 59, 0.95)' // Dark slate with transparency
-            : 'rgba(255, 255, 255, 0.95)', // Light white with transparency
+          backgroundColor: 'rgba(255, 255, 255, 0.95)',
           backdropFilter: 'blur(8px)',
           color: 'text.primary',
-          borderBottom: `1px solid ${isDarkMode ? 'rgba(203, 213, 225, 0.1)' : 'rgba(226, 232, 240, 0.8)'}`,
         }}
       >
         <Toolbar sx={{ px: { xs: 2, md: 3 } }}>
@@ -426,9 +393,7 @@ export default function Navbar() {
                   sx={{ 
                     width: 320,
                     '& .MuiOutlinedInput-root': {
-                      backgroundColor: isDarkMode 
-                        ? alpha(theme.palette.background.paper, 0.8)
-                        : alpha(theme.palette.common.white, 0.8),
+                      backgroundColor: alpha(theme.palette.common.white, 0.8),
                     }
                   }}
                 />
@@ -505,29 +470,6 @@ export default function Navbar() {
               </Box>
             </>
           )}
-
-          {/* Dark Mode Toggle */}
-          <Tooltip title={isDarkMode ? "Switch to light mode" : "Switch to dark mode"}>
-            <IconButton 
-              onClick={(e) => {
-                const rect = e.currentTarget.getBoundingClientRect();
-                const originPosition = {
-                  x: rect.left + rect.width / 2,
-                  y: rect.top + rect.height / 2,
-                };
-                toggleDarkMode(originPosition);
-              }}
-              sx={{ 
-                mr: 1,
-                color: 'text.secondary',
-                '&:hover': { 
-                  backgroundColor: alpha(theme.palette.primary.main, 0.04) 
-                }
-              }}
-            >
-              {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
-            </IconButton>
-          </Tooltip>
 
           {/* User Menu */}
           {user ? (

@@ -257,16 +257,9 @@ cd edupapers && npm install && npm run setup
 
 4. **Environment Setup**
    ```bash
-   # Copy environment variables to frontend (required for Vite)
-   cp .env frontend/.env
-   
-   # Or manually create frontend/.env with the required variables:
-   # VITE_SUPABASE_URL=your-supabase-url
-   # VITE_SUPABASE_ANON_KEY=your-supabase-anon-key
-   # VITE_WEBHOOK_URL=http://localhost:8000/webhook/process-pdf
+   cp .env.example .env
+   # Configure your environment variables
    ```
-
-   > **Important**: Vite requires environment variables to be in the frontend directory. The frontend `.env` file must contain all `VITE_*` prefixed variables.
 
 5. **Start Development**
    ```bash
@@ -587,55 +580,7 @@ node scripts/show-structure.js
 
 ---
 
-## � Troubleshooting
-
-### Frontend Shows White Screen
-
-**Problem**: Frontend displays a blank white screen with console error: `supabaseUrl is required`
-
-**Solution**: 
-```bash
-# Copy environment variables to frontend directory
-cp .env frontend/.env
-
-# Or manually create frontend/.env with required variables
-echo "VITE_SUPABASE_URL=your-supabase-url" > frontend/.env
-echo "VITE_SUPABASE_ANON_KEY=your-supabase-anon-key" >> frontend/.env
-echo "VITE_WEBHOOK_URL=http://localhost:8000/webhook/process-pdf" >> frontend/.env
-```
-
-**Explanation**: Vite only loads environment variables from its own directory (`frontend/`), not from the project root.
-
-### Port Already in Use
-
-**Problem**: Backend fails to start with `EADDRINUSE` error
-
-**Solution**:
-```bash
-# Find and kill the process using the port
-lsof -ti:8000 | xargs kill -9
-# or
-npx kill-port 8000
-```
-
-### Dependencies Issues
-
-**Problem**: Missing dependencies or version conflicts
-
-**Solution**:
-```bash
-# Clean install all dependencies
-rm -rf node_modules package-lock.json
-rm -rf frontend/node_modules frontend/package-lock.json
-rm -rf backend/node_modules backend/package-lock.json
-
-# Reinstall everything
-npm run install-all
-```
-
----
-
-## �🚀 Deployment
+## 🚀 Deployment
 
 ### Production Build
 
