@@ -43,10 +43,13 @@ import {
   Info as InfoIcon,
   Phone as PhoneIcon,
   AccountCircle as AccountCircleIcon,
+  DarkMode as DarkModeIcon,
+  LightMode as LightModeIcon,
 } from '@mui/icons-material';
 import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
+import { useDarkMode } from '../contexts/DarkModeContext';
 import useDebounce from '../hooks/useDebounce';
 import { allSearchableSubjects } from '../data/universities';
 import type { SearchableSubject } from '../types';
@@ -57,6 +60,7 @@ export default function Navbar() {
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const { isDarkMode, toggleDarkMode } = useDarkMode();
   
   // State management
   const [displayName, setDisplayName] = useState('');
@@ -185,6 +189,15 @@ export default function Navbar() {
     setSearchOpen(false);
   };
 
+  const handleDarkModeToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    const originPosition = {
+      x: rect.left + rect.width / 2,
+      y: rect.top + rect.height / 2,
+    };
+    toggleDarkMode(originPosition);
+  };
+
   const getFirstName = (fullName: string) => {
     if (!fullName) return '';
     return fullName.split(' ')[0];
@@ -252,6 +265,22 @@ export default function Navbar() {
             </ListItemButton>
           </ListItem>
         ))}
+        
+        {/* Dark Mode Toggle */}
+        <ListItem disablePadding>
+          <ListItemButton
+            onClick={(e) => {
+              handleDarkModeToggle(e as any);
+              setMobileOpen(false);
+            }}
+            sx={{ mx: 1, borderRadius: 1 }}
+          >
+            <ListItemIcon>
+              {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
+            </ListItemIcon>
+            <ListItemText primary={isDarkMode ? 'Light Mode' : 'Dark Mode'} />
+          </ListItemButton>
+        </ListItem>
       </List>
 
       <Divider />
@@ -375,6 +404,22 @@ export default function Navbar() {
                   </Button>
                 ))}
               </Box>
+
+              {/* Dark Mode Toggle */}
+              <Tooltip title={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}>
+                <IconButton
+                  onClick={handleDarkModeToggle}
+                  sx={{ 
+                    mr: 2,
+                    color: 'text.primary',
+                    '&:hover': { 
+                      backgroundColor: alpha(theme.palette.primary.main, 0.08) 
+                    }
+                  }}
+                >
+                  {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
+                </IconButton>
+              </Tooltip>
 
               {/* Desktop Search */}
               <Box sx={{ position: 'relative', mr: 2 }} ref={searchRef}>
