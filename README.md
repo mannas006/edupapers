@@ -7,6 +7,7 @@
     <img src="https://img.shields.io/badge/TypeScript-5.6.3-blue?style=for-the-badge&logo=typescript" alt="TypeScript">
     <img src="https://img.shields.io/badge/Python-3.8+-green?style=for-the-badge&logo=python" alt="Python">
     <img src="https://img.shields.io/badge/Supabase-Backend-green?style=for-the-badge&logo=supabase" alt="Supabase">
+    <img src="https://img.shields.io/badge/Framer_Motion-Animations-purple?style=for-the-badge&logo=framer" alt="Framer Motion">
   </p>
   
   <p>
@@ -49,10 +50,28 @@
 - **🔒 Secure & Scalable**: Built with modern security practices and scalable architecture
 - **📱 Responsive Design**: Seamless experience across desktop, tablet, and mobile devices
 - **⚡ Real-time Updates**: Live progress tracking and instant feedback during processing
+- **🌙 Dark Mode**: Beautiful water ripple animations with smooth theme transitions
 
 ---
 
 ## 🔄 Recent Updates
+
+### Version 2.2.0 - Dark Mode & Water Ripple Animation ✨
+
+**🌊 Beautiful Dark Mode Features:**
+- **💧 Water Ripple Animation**: Stunning water drop animation starting from the dark mode toggle button
+- **🌊 Multi-layered Ripples**: Realistic physics with surface tension effects and progressive delays
+- **🔄 Bidirectional Animation**: Smooth transitions between light ↔ dark mode with adaptive effects
+- **⚡ GPU-Optimized Performance**: Hardware-accelerated animations with smooth easing curves
+- **🎨 Enhanced UI Theming**: Dynamic AppBar backgrounds, improved Material-UI component styling
+- **🌙 Adaptive Color Schemes**: Intelligent color adaptation for both light and dark themes
+
+**🔧 Technical Improvements:**
+- **WaterRippleAnimation Component**: Built with Framer Motion for smooth animations
+- **DarkModeContext**: Centralized theme management with animation support
+- **Click Position Detection**: Accurate ripple origin tracking for natural effects
+- **Performance Optimization**: Efficient animation cleanup and memory management
+- **Enhanced Theme System**: Component-level overrides for consistent theming
 
 ### Version 2.1.0 - Backend Structure Optimization
 
@@ -62,6 +81,7 @@
 - **🔧 Updated References**: All Node.js server references now point to the new `backend/src/` structure
 - **📦 Simplified Deployment**: More conventional backend layout for easier deployment and maintenance
 - **🧹 Code Organization**: Removed redundant directory nesting and improved code accessibility
+- **🗑️ Dependency Cleanup**: Removed redundant root `node_modules` for cleaner project structure
 
 **📁 New Backend Structure:**
 - `/backend/src/` - All Python AI processing logic (main.py, gemini_client.py, etc.)
@@ -105,16 +125,19 @@
 | **Search & Filter** | Advanced search across questions and papers | ✅ |
 | **User Management** | Role-based access control (Student, Pro, Admin) | ✅ |
 | **Export Options** | Multiple export formats (JSON, PDF, etc.) | ✅ |
+| **Dark Mode** | Beautiful water ripple animations and theme switching | ✅ |
 
 ### 🔧 Technical Features
 
 - **Modern Tech Stack**: React 18, TypeScript, Node.js, Python
+- **Advanced Animations**: Framer Motion with water ripple effects and smooth transitions
+- **Dark Mode Support**: GPU-optimized theme switching with realistic physics animations
 - **Database**: Supabase with PostgreSQL backend
 - **Authentication**: Secure user authentication and authorization
 - **File Storage**: Cloud-based file storage and management
 - **API Integration**: RESTful APIs with comprehensive error handling
 - **Build System**: Vite with optimized production builds
-- **Styling**: Tailwind CSS with responsive design patterns
+- **Styling**: Tailwind CSS with responsive design patterns and Material-UI theming
 
 ---
 
@@ -173,18 +196,25 @@ EduPapers/
 ├── 📂 frontend/                # Frontend application
 │   ├── 📂 src/                # React source code
 │   │   ├── 📂 components/     # Reusable React components
+│   │   │   ├── Navbar.tsx     # Navigation with dark mode toggle
+│   │   │   ├── WaterRippleAnimation.tsx # Dark mode animations
+│   │   │   └── QuestionEditor.tsx # Question editing interface
 │   │   ├── 📂 pages/          # Application pages
-│   │   ├── 📂 contexts/       # React contexts (Auth, etc.)
+│   │   ├── 📂 contexts/       # React contexts (Auth, DarkMode, etc.)
+│   │   │   ├── AuthContext.tsx    # Authentication context
+│   │   │   └── DarkModeContext.tsx # Theme management context
 │   │   ├── 📂 hooks/          # Custom React hooks
 │   │   ├── 📂 lib/            # External integrations
+│   │   ├── 📂 theme/          # Material-UI theme configurations
+│   │   │   └── mui-theme.ts   # Dark/light theme definitions
 │   │   └── 📂 types/          # TypeScript definitions
 │   ├── 📂 public/             # Static assets
 │   ├── 📂 config/             # Build & deployment configs
 │   │   ├── vite.config.ts     # Vite configuration
-│   │   ├── tailwind.config.js # Tailwind CSS config
+│   │   ├── tailwind.config.js # Tailwind CSS config (with dark mode)
 │   │   └── tsconfig.json      # TypeScript config
 │   ├── index.html             # Main HTML template
-│   └── package.json           # Frontend dependencies
+│   └── package.json           # Frontend dependencies (includes framer-motion)
 │
 ├── 📂 backend/                 # Backend services
 │   ├── 📂 src/                # Python AI processing engine
@@ -504,7 +534,8 @@ npm run dev-with-processor  # Start both services
 ```
 frontend/src/
 ├── components/          # Reusable UI components
-│   ├── Navbar.tsx      # Navigation component
+│   ├── Navbar.tsx      # Navigation component with dark mode toggle
+│   ├── WaterRippleAnimation.tsx # Water ripple animation effects
 │   ├── UniversityCard.tsx # University display card
 │   └── QuestionEditor.tsx # Question editing interface
 ├── pages/              # Route-based page components
@@ -512,12 +543,15 @@ frontend/src/
 │   ├── Upload.tsx      # PDF upload interface
 │   └── Profile.tsx     # User profile page
 ├── contexts/           # React Context providers
-│   └── AuthContext.tsx # Authentication context
+│   ├── AuthContext.tsx # Authentication context
+│   └── DarkModeContext.tsx # Dark mode theme management
 ├── hooks/              # Custom React hooks
 │   └── useDebounce.ts  # Debounce utility hook
 ├── lib/                # External service integrations
 │   ├── supabase.ts     # Supabase client
 │   └── firebase.ts     # Firebase configuration
+├── theme/              # Theme configurations
+│   └── mui-theme.ts    # Material-UI light/dark theme definitions
 └── types/              # TypeScript type definitions
     ├── index.ts        # Common types
     └── supabase.ts     # Database types
@@ -751,10 +785,12 @@ copies or substantial portions of the Software.
 
 ## 📊 Project Status
 
-- **Current Version**: 2.1.0
+- **Current Version**: 2.2.0
 - **Status**: Production Ready
 - **Last Updated**: June 2025
+- **Dark Mode**: ✅ Beautiful water ripple animations
 - **Backend Structure**: ✅ Optimized & Streamlined
+- **Project Cleanup**: ✅ Redundant dependencies removed
 - **Maintained**: ✅ Actively maintained
 - **Security**: ✅ Regular security updates
 
