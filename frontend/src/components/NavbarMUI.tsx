@@ -273,7 +273,18 @@ export default function Navbar() {
               handleDarkModeToggle(e as any);
               setMobileOpen(false);
             }}
-            sx={{ mx: 1, borderRadius: 1 }}
+            sx={{ 
+              mx: 1, 
+              borderRadius: 1,
+              backgroundColor: isDarkMode 
+                ? alpha(theme.palette.warning.main, 0.1)
+                : alpha(theme.palette.primary.main, 0.1),
+              '&:hover': {
+                backgroundColor: isDarkMode
+                  ? alpha(theme.palette.warning.main, 0.2)
+                  : alpha(theme.palette.primary.main, 0.2),
+              },
+            }}
           >
             <ListItemIcon>
               {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
@@ -338,9 +349,12 @@ export default function Navbar() {
         position="sticky" 
         elevation={0}
         sx={{ 
-          backgroundColor: 'rgba(255, 255, 255, 0.95)',
+          backgroundColor: theme.palette.mode === 'dark' 
+            ? 'rgba(30, 41, 59, 0.95)' // Dark mode: slate-800 with opacity
+            : 'rgba(255, 255, 255, 0.95)', // Light mode: white with opacity
           backdropFilter: 'blur(8px)',
           color: 'text.primary',
+          borderBottom: `1px solid ${theme.palette.divider}`,
         }}
       >
         <Toolbar sx={{ px: { xs: 2, md: 3 } }}>
@@ -412,9 +426,15 @@ export default function Navbar() {
                   sx={{ 
                     mr: 2,
                     color: 'text.primary',
+                    backgroundColor: isDarkMode 
+                      ? alpha(theme.palette.warning.main, 0.1)
+                      : alpha(theme.palette.primary.main, 0.1),
                     '&:hover': { 
-                      backgroundColor: alpha(theme.palette.primary.main, 0.08) 
-                    }
+                      backgroundColor: isDarkMode
+                        ? alpha(theme.palette.warning.main, 0.2)
+                        : alpha(theme.palette.primary.main, 0.2),
+                    },
+                    transition: 'all 0.2s ease-in-out',
                   }}
                 >
                   {isDarkMode ? <LightModeIcon /> : <DarkModeIcon />}
@@ -438,7 +458,9 @@ export default function Navbar() {
                   sx={{ 
                     width: 320,
                     '& .MuiOutlinedInput-root': {
-                      backgroundColor: alpha(theme.palette.common.white, 0.8),
+                      backgroundColor: theme.palette.mode === 'dark'
+                        ? alpha(theme.palette.background.paper, 0.8)
+                        : alpha(theme.palette.common.white, 0.8),
                     }
                   }}
                 />
@@ -618,7 +640,8 @@ export default function Navbar() {
         PaperProps={{
           sx: { 
             backgroundColor: 'background.paper',
-            borderRight: `1px solid ${theme.palette.divider}`
+            borderRight: `1px solid ${theme.palette.divider}`,
+            color: 'text.primary',
           }
         }}
       >
