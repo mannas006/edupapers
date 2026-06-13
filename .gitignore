@@ -101,4 +101,6 @@ config/local.env
 
 # Exclude frontend source lib from being ignored
 !frontend/src/lib/
+!vercel.json
+
 
