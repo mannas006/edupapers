@@ -37,7 +37,7 @@ import {
 import { universities } from '../data/universities';
 import QuestionEditor from '../components/QuestionEditor';
 import toast, { Toaster } from 'react-hot-toast';
-import supabase from '../lib/supabase';
+import { db } from '../lib/adapters';
 import { useAuth } from '../contexts/AuthContext';
 
 export default function QuestionPaperPageMUI() {
@@ -52,6 +52,8 @@ export default function QuestionPaperPageMUI() {
   const [userUniversityId, setUserUniversityId] = useState<string | null>(null);
   const [userCourseId, setUserCourseId] = useState<string | null>(null);
   const [dataLoaded, setDataLoaded] = useState(false);
+  const [customSubjects, setCustomSubjects] = useState<string[]>([]);
+  const [deletedStaticSlugs, setDeletedStaticSlugs] = useState<string[]>([]);
   const lastFetchParamsRef = useRef<string>('');
 
   const formattedSubjectName = subjectName?.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase());
@@ -109,40 +111,55 @@ export default function QuestionPaperPageMUI() {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('questions')
-        .select('*')
-        .eq('university_id', universityId)
-        .eq('course_id', courseId)
-        .eq('semester', semester)
-        .eq('subject_name', subjectName);
+      const content = await db.getQuestions(
+        universityId || '', 
+        courseId || '', 
+        semester || '', 
+        subjectName || ''
+      );
+      setQuestions(content);
 
-      if (error) {
-        console.error('Failed to fetch questions:', error);
-        toast.error('Failed to load questions.');
-      } else if (data && data.length > 0) {
-        setQuestions(data[0].content || '');
-      } else {
-        setQuestions('');
+      try {
+        const dbSubjects = await db.getSemesterSubjects(
+          universityId || '',
+          courseId || '',
+          semester || ''
+        );
+        setCustomSubjects(dbSubjects.filter(name => name !== '__deleted_subjects__'));
+      } catch (err) {
+        console.error('Error fetching custom subjects in QuestionPaperPageMUI:', err);
       }
 
-      if (user) {
-        const { data: profileData, error: profileError } = await supabase
-          .from('profiles')
-          .select('role, university_id, course_id')
-          .eq('email', user.email)
-          .single();
+      try {
+        const deletedData = await db.getQuestions(
+          universityId || '',
+          courseId || '',
+          semester || '',
+          '__deleted_subjects__'
+        );
+        if (deletedData) {
+          try {
+            setDeletedStaticSlugs(JSON.parse(deletedData));
+          } catch (e) {
+            console.error('Error parsing deleted static subjects:', e);
+          }
+        } else {
+          setDeletedStaticSlugs([]);
+        }
+      } catch (err) {
+        console.error('Error fetching deleted static subjects in QuestionPaperPageMUI:', err);
+      }
 
-        if (profileError) {
-          console.error('Error fetching profile data:', profileError);
-          // Reduced error visibility for better UX
+      if (user && user.email) {
+        const profileData = await db.getProfile(user.email);
+        if (profileData) {
+          setUserRole(profileData.role || null);
+          setUserUniversityId(profileData.university_id || null);
+          setUserCourseId(profileData.course_id || null);
+        } else {
           setUserRole(null);
           setUserUniversityId(null);
           setUserCourseId(null);
-        } else {
-          setUserRole(profileData?.role || null);
-          setUserUniversityId(profileData?.university_id || null);
-          setUserCourseId(profileData?.course_id || null);
         }
       } else {
         setUserRole(null);
@@ -177,20 +194,13 @@ export default function QuestionPaperPageMUI() {
     );
   }
 
-  const subjects = course.subjects[semesterNumber];
-  const subject = subjects.find(sub => sub.question.replace(/ /g, '-').toLowerCase() === subjectName);
-
-  if (!subject) {
-    return (
-      <Container sx={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <Typography variant="h6" color="text.secondary">
-          Question paper not found
-        </Typography>
-      </Container>
-    );
-  }
+  const subjects = course.subjects[semesterNumber] || [];
+  const isStatic = subjects.some(sub => sub.question.replace(/ /g, '-').toLowerCase() === subjectName);
+  const isCustom = customSubjects.includes(subjectName || '');
 
   const canEdit = () => {
+    if (!user) return false;
+    if (isCustom) return true;
     if (!userRole) return false;
     if (userRole === 'admin') return true;
     if (userRole === 'pro' && String(userUniversityId) === String(universityId)) return true;
@@ -200,29 +210,30 @@ export default function QuestionPaperPageMUI() {
     return false;
   };
 
+  const isDeletedStatic = deletedStaticSlugs.includes(subjectName || '');
+
+  if ((isDeletedStatic || (!isStatic && !isCustom)) && !loading) {
+    return (
+      <Container sx={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <Typography variant="h6" color="text.secondary">
+          Question paper not found
+        </Typography>
+      </Container>
+    );
+  }
+
   const handleSaveQuestions = async (content: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('questions')
-        .upsert(
-          {
-            university_id: universityId,
-            course_id: courseId,
-            semester,
-            subject_name: subjectName,
-            content,
-          },
-          { onConflict: 'university_id,course_id,semester,subject_name' }
-        );
-
-      if (error) {
-        console.error('Failed to save question:', error);
-        toast.error('Failed to save question.');
-      } else {
-        setQuestions(content);
-        toast.success('Question saved successfully!');
-      }
+      await db.upsertQuestions(
+        universityId || '',
+        courseId || '',
+        semester || '',
+        subjectName || '',
+        content
+      );
+      setQuestions(content);
+      toast.success('Question saved successfully!');
     } catch (error) {
       console.error('Error saving question:', error);
       toast.error('An unexpected error occurred while saving question.');
@@ -253,18 +264,29 @@ export default function QuestionPaperPageMUI() {
         <Box sx={{ mb: 4 }}>
           {/* Back Button and Edit Button */}
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 3 }}>
-            <IconButton
+            <Button
+              variant="outlined"
+              color="inherit"
+              startIcon={<ArrowBack />}
               onClick={() => navigate(-1)}
               sx={{ 
+                borderRadius: 2,
+                textTransform: 'none',
+                fontWeight: 500,
+                borderColor: alpha(theme.palette.divider, 0.15),
                 color: 'text.secondary',
+                px: 2,
+                py: 0.75,
                 '&:hover': { 
-                  backgroundColor: alpha(theme.palette.primary.main, 0.1),
+                  backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                  borderColor: theme.palette.primary.main,
                   color: 'primary.main'
-                }
+                },
+                transition: 'all 0.2s ease'
               }}
             >
-              <ArrowBack />
-            </IconButton>
+              Back
+            </Button>
             
             {canEdit() && (
               <Tooltip title={`Edit as ${userRole?.toUpperCase()} user`}>
@@ -275,7 +297,15 @@ export default function QuestionPaperPageMUI() {
                   sx={{ 
                     borderRadius: 2,
                     textTransform: 'none',
-                    fontWeight: 500
+                    fontWeight: 500,
+                    borderColor: theme.palette.primary.main,
+                    color: 'primary.main',
+                    px: 2,
+                    py: 0.75,
+                    '&:hover': {
+                      backgroundColor: alpha(theme.palette.primary.main, 0.04),
+                      borderColor: theme.palette.primary.main,
+                    }
                   }}
                 >
                   Edit Questions

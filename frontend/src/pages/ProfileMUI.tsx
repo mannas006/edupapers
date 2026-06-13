@@ -33,7 +33,7 @@ import { styled } from '@mui/material/styles';
 import { useAuth } from '../contexts/AuthContext';
 import toast, { Toaster } from 'react-hot-toast';
 import { useNavigate } from 'react-router-dom';
-import supabase from '../lib/supabase';
+import { db } from '../lib/adapters';
 
 const GradientButton = styled(Button)(({ theme }) => ({
   background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
@@ -97,16 +97,8 @@ export default function ProfileMUI() {
         setEmail(user.email || '');
 
         try {
-          const { data, error } = await supabase
-            .from('profiles')
-            .select('full_name, role, university_id, course_id')
-            .eq('email', user.email)
-            .single();
-
-          if (error) {
-            console.error('Error fetching profile data:', error);
-            toast.error('Failed to load profile data.');
-          } else if (data) {
+          const data = await db.getProfile(user.email);
+          if (data) {
             setFullName(data.full_name || '');
             setRole(data.role || '');
             setUniversityId(data.university_id || '');
@@ -129,20 +121,12 @@ export default function ProfileMUI() {
     setError(null);
 
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .upsert({
-          email: user.email,
-          full_name: fullName,
-          role: role,
-          university_id: universityId,
-          course_id: courseId,
-          updated_at: new Date().toISOString()
-        });
-
-      if (error) {
-        throw error;
-      }
+      await db.updateProfile(user.email, {
+        full_name: fullName,
+        role: role,
+        university_id: universityId,
+        course_id: courseId
+      });
 
       toast.success('Profile updated successfully!');
       setIsEditing(false);

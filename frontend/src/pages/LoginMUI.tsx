@@ -181,7 +181,7 @@ export default function LoginMUI() {
       toast.success('Welcome back!');
     } catch (error: any) {
       setAuthError(error.message || 'Invalid email or password');
-      toast.error('Login failed. Please check your credentials.');
+      toast.error(error.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsSubmitting(false);
     }

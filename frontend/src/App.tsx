@@ -19,7 +19,7 @@ import QuestionPaperPageMUI from './pages/QuestionPaperPageMUI';
 
 function AppContent() {
   const { isDarkMode, animationState } = useDarkMode();
-  const currentYear = 2025;
+  const currentYear = new Date().getFullYear();
 
   const theme = useMemo(
     () => createAppTheme(isDarkMode),

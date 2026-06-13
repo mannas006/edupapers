@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import supabase from '../lib/supabase';
+import { auth } from '../lib/adapters';
 import toast from 'react-hot-toast';
 import SkeletonLoading from '../components/SkeletonLoading';
 
@@ -19,32 +19,30 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const fetchUser = async () => {
       setLoading(true);
-      const { data: { user: sessionUser } } = await supabase.auth.getUser();
-      setUser(sessionUser);
-      setLoading(false);
+      try {
+        const sessionUser = await auth.getCurrentUser();
+        setUser(sessionUser);
+      } catch (error) {
+        console.error('Error fetching current user:', error);
+      } finally {
+        setLoading(false);
+      }
     };
 
     fetchUser();
 
-    supabase.auth.onAuthStateChange((event, session) => {
-      setUser(session?.user || null);
+    const unsubscribe = auth.onAuthStateChange((sessionUser) => {
+      setUser(sessionUser);
     });
+
+    return () => unsubscribe();
   }, []);
 
   const signInWithEmail = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
-        email,
-        password,
-      });
-      if (error) {
-        console.error('Error signing in:', error);
-        toast.error(`Failed to sign in: ${error.message}`);
-        throw error;
-      } else {
-        toast.success('Successfully signed in!', { duration: 4000 });
-      }
+      const signedInUser = await auth.signInWithEmail(email, password);
+      toast.success('Successfully signed in!', { duration: 4000 });
     } catch (error: any) {
       console.error('Error signing in:', error);
       throw error;
@@ -56,14 +54,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = async () => {
     setLoading(true);
     try {
-      const { error } = await supabase.auth.signOut();
-      if (error) {
-        console.error('Error signing out:', error);
-        toast.error(`Failed to sign out: ${error.message}`);
-      }
+      await auth.logout();
+      toast.success('Successfully signed out!');
     } catch (error: any) {
       console.error('Error signing out:', error);
-      toast.error(`An unexpected error occurred during sign out: ${error.message}`);
+      toast.error(`Failed to sign out: ${error.message}`);
     } finally {
       setLoading(false);
     }

@@ -53,8 +53,8 @@ import { useDropzone } from 'react-dropzone';
 import { v4 as uuidv4 } from 'uuid';
 import { useAuth } from '../contexts/AuthContext';
 import toast, { Toaster } from 'react-hot-toast';
+import { db, storage } from '../lib/adapters';
 import { universities } from '../data/universities';
-import supabase from '../lib/supabase';
 
 // Processing status types
 type ProcessingStatus = 'idle' | 'uploading' | 'downloading' | 'processing' | 'completed' | 'failed';
@@ -291,8 +291,19 @@ export default function UploadMUI() {
   const { user } = useAuth();
   const theme = useTheme();
   
-  // Check if Supabase is properly configured
-  const isSupabaseConfigured = import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY;
+  // Check if active backend is configured
+  const backendProvider = import.meta.env.VITE_BACKEND_PROVIDER || 'supabase';
+  const isBackendConfigured = (() => {
+    switch (backendProvider.toLowerCase()) {
+      case 'firebase':
+        return !!(import.meta.env.VITE_FIREBASE_API_KEY && import.meta.env.VITE_FIREBASE_PROJECT_ID);
+      case 'convex':
+        return !!import.meta.env.VITE_CONVEX_URL;
+      case 'supabase':
+      default:
+        return !!(import.meta.env.VITE_SUPABASE_URL && import.meta.env.VITE_SUPABASE_ANON_KEY);
+    }
+  })();
   
   // Form state
   const [file, setFile] = useState<File | null>(null);
@@ -397,9 +408,9 @@ export default function UploadMUI() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Check if Supabase is configured
-    if (!isSupabaseConfigured) {
-      toast.error('Application not configured. Please set up Supabase environment variables.');
+    // Check if active backend is configured
+    if (!isBackendConfigured) {
+      toast.error(`Application not configured. Please set up environment variables for ${backendProvider}.`);
       return;
     }
     
@@ -453,50 +464,22 @@ export default function UploadMUI() {
         user: user.id
       });
 
-      // Upload to Supabase Storage - use the existing 'edupapers' bucket
-      const { data: uploadData, error: uploadError } = await supabase.storage
-        .from('edupapers')
-        .upload(filePath, file);
+      // Upload using the storage adapter
+      const publicUrl = await storage.uploadPaper(filePath, file);
 
-      if (uploadError) {
-        console.error('Storage upload error:', uploadError);
-        throw uploadError;
-      }
-
-      if (!uploadData) {
-        throw new Error('Failed to upload file to storage');
-      }
-
-      // Get public URL using the edupapers bucket
-      const { data: urlData } = supabase.storage
-        .from('edupapers')
-        .getPublicUrl(filePath);
-
-      if (!urlData?.publicUrl) {
-        throw new Error('Failed to get file URL');
-      }
-
-      // Save to database - matching original Upload.tsx structure
-      const { data: dbData, error: dbError } = await supabase
-        .from('papers')
-        .insert({
-          user_id: user.id,
-          university: university,
-          course: course,
-          semester: semester,
-          year: parseInt(year),
-          subject: subjectName || 'General',
-          file_url: urlData.publicUrl,
-          file_name: file.name,
-          uploader_name: uploaderName,
-          processing_status: enableAIExtraction ? 'pending' : 'completed'
-        })
-        .select()
-        .single();
-
-      if (dbError) {
-        throw dbError;
-      }
+      // Save using the database adapter
+      const dbData = await db.createPaper({
+        user_id: user.id,
+        university: university,
+        course: course,
+        semester: semester,
+        year: parseInt(year),
+        subject: subjectName || 'General',
+        file_url: publicUrl,
+        file_name: file.name,
+        uploader_name: uploaderName,
+        processing_status: enableAIExtraction ? 'pending' : 'completed'
+      });
 
       // Trigger PDF processing only if AI extraction is enabled
       if (enableAIExtraction) {
@@ -752,7 +735,7 @@ export default function UploadMUI() {
       <Toaster position="top-right" />
       
       {/* Configuration Warning */}
-      {!isSupabaseConfigured && (
+      {!isBackendConfigured && (
         <Fade in={true}>
           <Alert 
             severity="error" 
@@ -762,7 +745,7 @@ export default function UploadMUI() {
                 color="inherit" 
                 size="small" 
                 onClick={() => {
-                  toast.error('Please set up Supabase environment variables in .env file');
+                  toast.error(`Please set up environment variables for ${backendProvider} in .env file`);
                 }}
               >
                 DETAILS
@@ -770,8 +753,8 @@ export default function UploadMUI() {
             }
           >
             <Typography variant="body2">
-              <strong>Configuration Required:</strong> Supabase environment variables are not set. 
-              Please create a .env file with VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY.
+              <strong>Configuration Required:</strong> Environment variables for <strong>{backendProvider}</strong> are not set. 
+              Please check your .env file setup.
             </Typography>
           </Alert>
         </Fade>

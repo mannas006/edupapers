@@ -53,7 +53,7 @@ import { useDarkMode } from '../contexts/DarkModeContext';
 import useDebounce from '../hooks/useDebounce';
 import { allSearchableSubjects } from '../data/universities';
 import type { SearchableSubject } from '../types';
-import supabase from '../lib/supabase';
+import { db } from '../lib/adapters';
 
 export default function Navbar() {
   const theme = useTheme();
@@ -83,21 +83,16 @@ export default function Navbar() {
 
         // First try to fetch from profiles table
         try {
-          const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('full_name, role, university_id, course_id')
-            .eq('email', user.email)
-            .single();
+          const profileData = await db.getProfile(user.email);
           
-          console.log('Profile data from Supabase:', profileData);
-          console.log('Profile fetch error:', error);
+          console.log('Profile data loaded for Navbar:', profileData);
           
           if (profileData && profileData.full_name && profileData.full_name.trim()) {
             name = profileData.full_name.trim();
             console.log('Using full name from profile:', name);
           }
         } catch (error) {
-          console.error('Error fetching user profile:', error);
+          console.error('Error fetching user profile for Navbar:', error);
         }
 
         // If no name found in profiles, try auth metadata
