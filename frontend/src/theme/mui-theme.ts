@@ -38,8 +38,8 @@ export const createAppTheme = (isDarkMode: boolean) => {
       mode: isDarkMode ? 'dark' : 'light',
       ...baseColors,
       background: {
-        default: isDarkMode ? '#0F172A' : '#F8FAFC',
-        paper: isDarkMode ? '#1E293B' : '#FFFFFF',
+        default: isDarkMode ? '#0A192F' : '#F8FAFC',
+        paper: isDarkMode ? '#172A45' : '#FFFFFF',
       },
       text: {
         primary: isDarkMode ? '#F8FAFC' : '#0F172A',
@@ -67,7 +67,7 @@ export const createAppTheme = (isDarkMode: boolean) => {
         styleOverrides: {
           root: {
             backgroundColor: isDarkMode 
-              ? 'rgba(30, 41, 59, 0.95)' // Dark slate with transparency
+              ? 'rgba(23, 42, 69, 0.95)' // Rich navy blue with transparency
               : 'rgba(255, 255, 255, 0.95)', // Light white with transparency
             backdropFilter: 'blur(8px)',
             borderBottom: `1px solid ${isDarkMode ? 'rgba(203, 213, 225, 0.1)' : 'rgba(226, 232, 240, 0.8)'}`,
