@@ -60,13 +60,13 @@ const CourseCard: React.FC<{ course: any; index: number }> = ({ course, index })
     } else if (name.includes('M.TECH')) {
       return <School sx={{ fontSize: { xs: 30, sm: 44 }, color: 'secondary.main' }} />;
     } else if (name.includes('BCA')) {
-      return <Code sx={{ fontSize: { xs: 30, sm: 44 }, color: 'info.main' }} />;
+      return <School sx={{ fontSize: { xs: 30, sm: 44 }, color: 'primary.main' }} />;
     } else if (name.includes('MCA')) {
-      return <Code sx={{ fontSize: { xs: 30, sm: 44 }, color: 'success.main' }} />;
+      return <School sx={{ fontSize: { xs: 30, sm: 44 }, color: 'secondary.main' }} />;
     } else if (name.includes('MBA')) {
-      return <TrendingUp sx={{ fontSize: { xs: 30, sm: 44 }, color: 'warning.main' }} />;
+      return <School sx={{ fontSize: { xs: 30, sm: 44 }, color: 'secondary.main' }} />;
     } else if (name.includes('BBA')) {
-      return <TrendingUp sx={{ fontSize: { xs: 30, sm: 44 }, color: 'error.main' }} />;
+      return <School sx={{ fontSize: { xs: 30, sm: 44 }, color: 'primary.main' }} />;
     }
     return <School sx={{ fontSize: { xs: 30, sm: 44 }, color: 'primary.main' }} />;
   };
@@ -701,135 +701,158 @@ export default function Home() {
               display: 'flex', 
               flexDirection: { xs: 'column', lg: 'row' }, 
               justifyContent: 'space-between', 
-              alignItems: { xs: 'flex-start', lg: 'center' }, 
-              gap: 3.5 
+              alignItems: { xs: 'flex-start', lg: 'flex-end' }, 
+              gap: 3.5,
+              pb: 3.5,
+              borderBottom: `1px solid ${alpha(theme.palette.divider, 0.06)}`
             }}
           >
-            <Box>
-              <Stack direction="row" alignItems="center" spacing={2} sx={{ mb: 1 }}>
+            <Box sx={{ flex: '1 1 auto', pr: { lg: 3 }, width: { xs: '100%', lg: 'auto' } }}>
+              <Stack direction={{ xs: 'column', sm: 'row' }} alignItems={{ xs: 'flex-start', sm: 'center' }} spacing={2} sx={{ mb: 1.5, flexWrap: 'wrap', gap: 1.5 }}>
                 <Typography 
                   variant="h4" 
-                  fontWeight="800" 
+                  fontWeight="900" 
                   sx={{ 
                     display: 'flex', 
                     alignItems: 'center', 
-                    gap: 1.5, 
-                    letterSpacing: '-0.03em',
-                    background: `linear-gradient(45deg, ${theme.palette.primary.main}, ${theme.palette.secondary.main})`,
+                    gap: 1.8, 
+                    letterSpacing: '-0.035em',
+                    background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
                     backgroundClip: 'text',
                     WebkitBackgroundClip: 'text',
                     WebkitTextFillColor: 'transparent',
-                    fontSize: { xs: '1.8rem', md: '2.2rem' }
+                    fontSize: { xs: '1.8rem', sm: '2.1rem', md: '2.4rem' },
+                    lineHeight: 1.15
                   }}
                 >
-                  <CloudDownload sx={{ fontSize: 36, color: theme.palette.primary.main }} />
+                  <CloudDownload sx={{ fontSize: { xs: 32, sm: 38 }, color: theme.palette.primary.main, filter: `drop-shadow(0 4px 10px ${alpha(theme.palette.primary.main, 0.3)})` }} />
                   MAKAUT Official Paper Archive
                 </Typography>
-                <Chip 
-                  label={`Database: ${makautPapers.length} Papers`}
-                  color="primary"
-                  variant="filled"
-                  size="small"
-                  sx={{ fontWeight: 700, borderRadius: 1.5, display: { xs: 'none', sm: 'inline-flex' } }}
-                />
+                
+                <Box
+                  sx={{
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: 1,
+                    bgcolor: alpha(theme.palette.primary.main, 0.06),
+                    color: 'primary.main',
+                    border: `1px solid ${alpha(theme.palette.primary.main, 0.12)}`,
+                    borderRadius: '10px',
+                    px: 1.8,
+                    py: 0.6,
+                    fontSize: '0.8rem',
+                    fontWeight: 800,
+                    letterSpacing: '-0.01em',
+                    backdropFilter: 'blur(5px)'
+                  }}
+                >
+                  <Box 
+                    sx={{ 
+                      width: 6, 
+                      height: 6, 
+                      borderRadius: '50%', 
+                      bgcolor: 'primary.main', 
+                      display: 'inline-block',
+                      position: 'relative',
+                      '&::after': {
+                        content: '""',
+                        position: 'absolute',
+                        top: -3,
+                        left: -3,
+                        width: 12,
+                        height: 12,
+                        borderRadius: '50%',
+                        border: `2px solid ${theme.palette.primary.main}`,
+                        '@keyframes ripple': {
+                          '0%': { transform: 'scale(0.5)', opacity: 1 },
+                          '100%': { transform: 'scale(1.8)', opacity: 0 }
+                        },
+                        animation: 'ripple 1.5s infinite ease-out'
+                      }
+                    }} 
+                  />
+                  Database: {makautPapers.length.toLocaleString()} Papers
+                </Box>
               </Stack>
-              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem', maxWidth: 700 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ fontSize: '0.95rem', lineHeight: 1.5, maxWidth: 680 }}>
                 Browse, search, and download verified past year university question papers directly crawled from makaut.com.
               </Typography>
             </Box>
 
             {/* Course filter badges */}
-            <Stack 
-              direction="row" 
-              spacing={1} 
+            <Box 
               sx={{ 
-                overflowX: { xs: 'auto', lg: 'visible' },
-                whiteSpace: { xs: 'nowrap', lg: 'normal' },
-                flexWrap: { xs: 'nowrap', lg: 'wrap' },
-                gap: { xs: 1, lg: 1.2 },
-                width: '100%',
-                justifyContent: { xs: 'flex-start', lg: 'flex-end' },
-                pb: { xs: 1.5, lg: 0 },
-                '&::-webkit-scrollbar': { display: 'none' },
-                msOverflowStyle: 'none',
-                scrollbarWidth: 'none',
+                flex: '0 0 auto', 
+                width: { xs: '100%', lg: 'auto' },
+                display: 'flex',
+                justifyContent: { xs: 'flex-start', lg: 'flex-end' }
               }}
             >
-              {['All', 'BTECH', 'BCA', 'BBA', 'MBA', 'MCA', 'MTECH', 'BSC', 'BPHARM', 'MSC'].map(course => (
-                <Chip
-                  key={course}
-                  label={course === 'All' ? 'Show All Courses' : course}
-                  onClick={() => {
-                    setMakautActiveCourse(course);
-                    setMakautVisibleCount(6); // reset visibility count
-                  }}
-                  color={makautActiveCourse === course ? 'primary' : 'default'}
-                  variant={makautActiveCourse === course ? 'filled' : 'outlined'}
-                  sx={{ 
-                    cursor: 'pointer', 
-                    borderRadius: 2, 
-                    fontWeight: 650,
-                    px: 0.5,
-                    transition: 'all 0.2s',
-                    '&:hover': {
-                      transform: 'translateY(-1px)'
-                    }
-                  }}
-                />
-              ))}
-            </Stack>
+              <Stack 
+                direction="row" 
+                sx={{ 
+                  overflowX: 'auto',
+                  flexWrap: { xs: 'nowrap', lg: 'wrap' },
+                  gap: 1.2,
+                  justifyContent: { xs: 'flex-start', lg: 'flex-end' },
+                  width: '100%',
+                  maxWidth: { lg: 580 },
+                  pb: { xs: 1.5, lg: 0 },
+                  '&::-webkit-scrollbar': { display: 'none' },
+                  msOverflowStyle: 'none',
+                  scrollbarWidth: 'none',
+                }}
+              >
+                {['All', 'BTECH', 'BCA', 'BBA', 'MBA', 'MCA', 'MTECH', 'BSC', 'BPHARM', 'MSC'].map(course => {
+                  const isActive = makautActiveCourse === course;
+                  return (
+                    <Button
+                      key={course}
+                      onClick={() => {
+                        setMakautActiveCourse(course);
+                        setMakautVisibleCount(6); // reset visibility count
+                      }}
+                      sx={{
+                        borderRadius: '12px',
+                        textTransform: 'none',
+                        fontWeight: 700,
+                        fontSize: '0.82rem',
+                        py: 0.8,
+                        px: 2,
+                        minWidth: 'auto',
+                        whiteSpace: 'nowrap',
+                        transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                        ...(isActive ? {
+                          background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                          color: 'white',
+                          boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.25)}`,
+                          border: 'none',
+                          '&:hover': {
+                            boxShadow: `0 8px 22px ${alpha(theme.palette.primary.main, 0.35)}`,
+                            transform: 'translateY(-1.5px)'
+                          }
+                        } : {
+                          bgcolor: alpha(theme.palette.background.paper, 0.4),
+                          color: 'text.secondary',
+                          border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                          '&:hover': {
+                            bgcolor: alpha(theme.palette.primary.main, 0.04),
+                            color: 'primary.main',
+                            borderColor: alpha(theme.palette.primary.main, 0.18),
+                            transform: 'translateY(-1.5px)'
+                          }
+                        })
+                      }}
+                    >
+                      {course === 'All' ? 'Show All Courses' : course}
+                    </Button>
+                  );
+                })}
+              </Stack>
+            </Box>
           </Box>
 
-          <Box sx={{ mb: 4, display: 'flex', gap: 2, flexDirection: { xs: 'column', md: 'row' }, alignItems: 'center' }}>
-            <TextField
-              fullWidth
-              placeholder="Search MAKAUT archive by name, subject code or year (e.g. chemistry, bsm101, 2026)..."
-              value={makautSearchQuery}
-              onChange={(e) => {
-                setMakautSearchQuery(e.target.value);
-                setMakautVisibleCount(6); // reset visibility count
-              }}
-              InputProps={{
-                startAdornment: (
-                  <InputAdornment position="start">
-                    <Search color="action" />
-                  </InputAdornment>
-                ),
-                endAdornment: makautSearchQuery && (
-                  <Button size="small" onClick={() => setMakautSearchQuery('')} sx={{ textTransform: 'none' }}>Clear</Button>
-                )
-              }}
-              sx={{
-                flexGrow: 1,
-                '& .MuiOutlinedInput-root': {
-                  borderRadius: 3.5,
-                  backgroundColor: alpha(theme.palette.background.default, 0.4),
-                  border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
-                  '& fieldset': { border: 'none' },
-                  '&:hover': {
-                    borderColor: alpha(theme.palette.primary.main, 0.2)
-                  },
-                  '&.Mui-focused': {
-                    borderColor: theme.palette.primary.main,
-                    boxShadow: `0 0 16px ${alpha(theme.palette.primary.main, 0.08)}`
-                  }
-                }
-              }}
-            />
 
-            <Chip
-              label={`${filteredMakautPapers.length} matches found`}
-              color="secondary"
-              variant="outlined"
-              sx={{ 
-                fontWeight: 600, 
-                height: 36, 
-                borderRadius: 2.5, 
-                px: 1,
-                alignSelf: { xs: 'flex-start', md: 'center' }
-              }}
-            />
-          </Box>
 
           {/* Paper Grid */}
           <Grid container spacing={3.5}>
