@@ -46,6 +46,7 @@ import QuestionEditor from '../components/QuestionEditor';
 import toast, { Toaster } from 'react-hot-toast';
 import { db } from '../lib/adapters';
 import { useAuth } from '../contexts/AuthContext';
+import { cleanSubjectName, getSubjectSlug } from '../utils/subjectUtils';
 
 export default function QuestionPaperPageMUI() {
   const { universityId, courseId, semester, subjectName } = useParams();
@@ -72,26 +73,56 @@ export default function QuestionPaperPageMUI() {
   const subjectsList = course?.subjects?.[semesterNumber] || [];
   const staticSubject = subjectsList.find(sub => sub.question.replace(/ /g, '-').toLowerCase() === subjectName);
 
+  const isCustom = customSubjects.includes(subjectName || '');
+
+  // Find all papers matching this subject in the crawled database
+  const crawledPapersForSubject = React.useMemo(() => {
+    if (isCustom || !course) return [];
+    const normalizedCourseName = course.name.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    return makautPapers.filter(p => {
+      const pCourse = p.course.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      if (pCourse !== normalizedCourseName || p.semester !== semesterNumber) return false;
+      const pSlug = getSubjectSlug(p.course, p.semester, cleanSubjectName(p));
+      return pSlug === subjectName?.toLowerCase();
+    });
+  }, [subjectName, course, semesterNumber, isCustom]);
+
+  // Extract unique sorted years from the crawled papers, fallback to default years if none found
+  const availableYears = React.useMemo(() => {
+    if (crawledPapersForSubject.length === 0) {
+      return ['2026', '2025', '2024', '2023', '2022'];
+    }
+    const years = Array.from(new Set(crawledPapersForSubject.map(p => p.year)));
+    return years.sort((a, b) => parseInt(b, 10) - parseInt(a, 10));
+  }, [crawledPapersForSubject]);
+
   // Look up subject details in the crawled database if not found statically
   const crawledSubjectInfo = React.useMemo(() => {
     if (staticSubject) return staticSubject;
-    const paper = makautPapers.find(p => p.id.toLowerCase() === subjectName?.toLowerCase());
-    if (paper) {
+    if (crawledPapersForSubject.length > 0) {
+      const paper = crawledPapersForSubject[0];
       return {
-        question: paper.title.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+        question: cleanSubjectName(paper),
         code: paper.code,
         type: 'Theory',
         year: paper.year
       };
     }
     return null;
-  }, [staticSubject, subjectName]);
+  }, [staticSubject, crawledPapersForSubject]);
 
   const subject = staticSubject || crawledSubjectInfo;
 
   const [selectedYear, setSelectedYear] = useState('2026');
   const [checkingLink, setCheckingLink] = useState(false);
   const [linkExists, setLinkExists] = useState<boolean | null>(null);
+
+  // Set default selected year when availableYears changes
+  useEffect(() => {
+    if (availableYears.length > 0 && !availableYears.includes(selectedYear)) {
+      setSelectedYear(availableYears[0]);
+    }
+  }, [availableYears, selectedYear]);
 
   const getBackendBaseUrl = () => {
     const webhookUrl = import.meta.env.VITE_WEBHOOK_URL || 'http://localhost:8000/webhook/process-pdf';
@@ -106,13 +137,8 @@ export default function QuestionPaperPageMUI() {
   const getMakautLink = (year: string) => {
     if (!subject) return '';
     
-    // Look up directly in makautPapers database if available
-    const paper = makautPapers.find(p => {
-      const matchSlug = p.id.toLowerCase() === subjectName?.toLowerCase() ||
-                        (subject.code && p.code.toLowerCase() === subject.code.toLowerCase());
-      return matchSlug && p.year === year;
-    });
-    
+    // Look up directly in pre-filtered crawled papers first
+    const paper = crawledPapersForSubject.find(p => p.year === year);
     if (paper) return paper.pdfUrl;
     
     // Fallback URL generator
@@ -300,7 +326,6 @@ export default function QuestionPaperPageMUI() {
 
   const subjects = course.subjects?.[semesterNumber] || [];
   const isStatic = subjects.some(sub => sub.question.replace(/ /g, '-').toLowerCase() === subjectName);
-  const isCustom = customSubjects.includes(subjectName || '');
 
   const canEdit = () => {
     if (!user) return false;
@@ -589,7 +614,7 @@ export default function QuestionPaperPageMUI() {
                         <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
                           Select Year:
                         </Typography>
-                        {['2026', '2025', '2024', '2023', '2022'].map((year) => (
+                        {availableYears.map((year) => (
                           <Chip
                             key={year}
                             label={year}

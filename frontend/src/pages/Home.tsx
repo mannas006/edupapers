@@ -39,6 +39,7 @@ import { Link } from 'react-router-dom';
 import { universities } from '../data/universities';
 import { collegeUpdates } from '../data/updates';
 import { makautPapers } from '../data/makaut_papers';
+import { cleanSubjectName, getSubjectSlug } from '../utils/subjectUtils';
 
 interface SearchablePaper {
   id: string;
@@ -51,6 +52,7 @@ interface SearchablePaper {
   subjectName: string;
   subjectCode: string;
   years: string[];
+  yearToPdf?: { [year: string]: string };
 }
 
 const CourseCard: React.FC<{ course: any; index: number }> = ({ course, index }) => {
@@ -221,18 +223,7 @@ export default function Home() {
 
   // Flatten and group all subjects with codes from the 4,553 papers database
   const allPapers = useMemo(() => {
-    const uniqueSubjectsMap = new Map<string, {
-      id: string;
-      universityId: string;
-      universityName: string;
-      universityShortName: string;
-      courseId: string;
-      courseName: string;
-      semester: number;
-      subjectName: string;
-      subjectCode: string;
-      years: string[];
-    }>();
+    const uniqueSubjectsMap = new Map<string, SearchablePaper>();
     
     if (makautUniversity) {
       makautPapers.forEach(paper => {
@@ -242,15 +233,17 @@ export default function Home() {
         );
         const courseId = matchedCourse ? matchedCourse.id : '21';
         
-        // Use subject code as unique key (or fallback to id if code is generic)
-        const key = paper.code && paper.code !== 'GENERIC' 
-          ? `${paper.course}-${paper.semester}-${paper.code.toLowerCase()}` 
-          : paper.id.toLowerCase();
+        // Generate clean subject name and unique slug
+        const cleanedName = cleanSubjectName(paper);
+        const key = getSubjectSlug(paper.course, paper.semester, cleanedName);
           
         const existing = uniqueSubjectsMap.get(key);
         if (existing) {
           if (!existing.years.includes(paper.year)) {
             existing.years.push(paper.year);
+          }
+          if (existing.yearToPdf) {
+            existing.yearToPdf[paper.year] = paper.pdfUrl;
           }
         } else {
           uniqueSubjectsMap.set(key, {
@@ -261,9 +254,10 @@ export default function Home() {
             courseId,
             courseName: paper.course,
             semester: paper.semester,
-            subjectName: paper.title.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+            subjectName: cleanedName,
             subjectCode: paper.code,
-            years: [paper.year]
+            years: [paper.year],
+            yearToPdf: { [paper.year]: paper.pdfUrl }
           });
         }
       });
@@ -307,9 +301,15 @@ export default function Home() {
   }, [makautSearchQuery, makautActiveCourse]);
 
   const getMakautLink = (paper: SearchablePaper, year: string) => {
+    if (paper.yearToPdf && paper.yearToPdf[year]) {
+      return paper.yearToPdf[year];
+    }
+    
     // Look up directly in makautPapers database
     const matchedPaper = makautPapers.find(p => {
-      const matchSlug = p.code.toLowerCase() === paper.subjectCode.toLowerCase();
+      const pCourse = p.course.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const paperCourse = paper.courseName.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      const matchSlug = pCourse === paperCourse && p.semester === paper.semester && p.code.toLowerCase() === paper.subjectCode.toLowerCase();
       return matchSlug && p.year === year;
     });
     
@@ -963,7 +963,50 @@ export default function Home() {
             </Box>
           </Box>
 
-
+          {/* Archive Search Bar & Filter Summary */}
+          <Box sx={{ mb: 4, display: 'flex', flexDirection: { xs: 'column', md: 'row' }, gap: 2, alignItems: 'center', justifyContent: 'space-between' }}>
+            <TextField
+              size="small"
+              placeholder="Search papers in archive by subject name, code, or year..."
+              value={makautSearchQuery}
+              onChange={(e) => {
+                setMakautSearchQuery(e.target.value);
+                setMakautVisibleCount(6); // reset visibility count on search
+              }}
+              InputProps={{
+                startAdornment: (
+                  <InputAdornment position="start">
+                    <Search sx={{ color: 'text.secondary', fontSize: 20 }} />
+                  </InputAdornment>
+                ),
+                endAdornment: makautSearchQuery && (
+                  <Button size="small" onClick={() => setMakautSearchQuery('')} sx={{ color: 'text.secondary', textTransform: 'none', minWidth: 'auto', p: 0.5 }}>Clear</Button>
+                )
+              }}
+              sx={{
+                width: { xs: '100%', md: 450 },
+                '& .MuiOutlinedInput-root': {
+                  borderRadius: 3,
+                  backgroundColor: alpha(theme.palette.background.paper, 0.8),
+                  border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                  transition: 'all 0.2s',
+                  '& fieldset': { border: 'none' },
+                  '&:hover': {
+                    borderColor: alpha(theme.palette.primary.main, 0.3),
+                  },
+                  '&.Mui-focused': {
+                    borderColor: 'primary.main',
+                    boxShadow: `0 0 0 3px ${alpha(theme.palette.primary.main, 0.12)}`
+                  }
+                }
+              }}
+            />
+            {makautSearchQuery && (
+              <Typography variant="body2" color="text.secondary" sx={{ alignSelf: { xs: 'flex-start', md: 'center' } }}>
+                Found {filteredMakautPapers.length} matching papers
+              </Typography>
+            )}
+          </Box>
 
           {/* Paper Grid */}
           <Grid container spacing={{ xs: 2.5, sm: 3.5 }}>
@@ -1031,7 +1074,7 @@ export default function Home() {
                         overflow: 'hidden'
                       }}
                     >
-                      {paper.title.replace(/-/g, ' ')}
+                      {cleanSubjectName(paper)}
                     </Typography>
                     
                     <Stack direction="row" spacing={1} sx={{ flexWrap: 'wrap', gap: 0.8 }}>

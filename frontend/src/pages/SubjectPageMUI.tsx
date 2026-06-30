@@ -40,6 +40,7 @@ import { makautPapers } from '../data/makaut_papers';
 import { db } from '../lib/adapters';
 import { useAuth } from '../contexts/AuthContext';
 import toast, { Toaster } from 'react-hot-toast';
+import { cleanSubjectName, getSubjectSlug } from '../utils/subjectUtils';
 
 export default function SubjectPageMUI() {
   const { universityId, courseId, semester } = useParams();
@@ -284,29 +285,28 @@ export default function SubjectPageMUI() {
     });
     
     // Extract unique subjects based on subject code or slugified name
-    const uniqueSubjectsMap = new Map<string, { question: string; code: string; year: string }>();
+    const uniqueSubjectsMap = new Map<string, { question: string; code: string; year: string; slug: string }>();
     matchingPapers.forEach(paper => {
-      const titleCleaned = paper.title
-        .replace(/-/g, ' ')
-        .replace(/\b\w/g, (l) => l.toUpperCase());
+      const cleanedName = cleanSubjectName(paper);
+      const slug = getSubjectSlug(paper.course, paper.semester, cleanedName);
       
-      const slug = paper.id.toLowerCase();
       if (!uniqueSubjectsMap.has(slug)) {
         uniqueSubjectsMap.set(slug, {
-          question: titleCleaned,
+          question: cleanedName,
           code: paper.code,
-          year: paper.year
+          year: paper.year,
+          slug
         });
       }
     });
     
-    return Array.from(uniqueSubjectsMap.entries()).map(([slug, details]) => ({
+    return Array.from(uniqueSubjectsMap.values()).map((details) => ({
       question: details.question,
       type: 'Theory',
       year: details.year,
       code: details.code.toLowerCase(),
       isCustom: false,
-      slug: slug
+      slug: details.slug
     }));
   }, [course, semesterNumber]);
 
@@ -344,8 +344,7 @@ export default function SubjectPageMUI() {
   const allSubjects = Array.from(allSubjectsMap.values());
 
   const handleSubjectClick = (subject: any) => {
-    const slug = subject.isCustom ? subject.slug : subject.question.replace(/ /g, '-').toLowerCase();
-    navigate(`/university/${universityId}/course/${courseId}/semester/${semester}/${slug}`);
+    navigate(`/university/${universityId}/course/${courseId}/semester/${semester}/${subject.slug}`);
   };
 
   const handleAddSubject = async () => {
