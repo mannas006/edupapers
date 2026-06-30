@@ -10,7 +10,7 @@ export interface Course {
   id: string;
   name: string;
   semesters: number;
-  subjects?: { [semester: number]: { question: string, type: string, year: string }[] };
+  subjects?: { [semester: number]: { question: string, type: string, year: string, code?: string, downloadUrl?: string }[] };
 }
 
 export interface User {

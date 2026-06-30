@@ -20,7 +20,8 @@ import {
   Divider,
   Stack,
   Tooltip,
-  Avatar
+  Avatar,
+  CircularProgress
 } from '@mui/material';
 import {
   ArrowBack,
@@ -32,9 +33,15 @@ import {
   QuestionAnswer,
   CalendarToday,
   Code,
-  Person
+  Person,
+  CloudDownload,
+  OpenInNew,
+  CheckCircle,
+  Cancel,
+  HourglassEmpty
 } from '@mui/icons-material';
 import { universities } from '../data/universities';
+import { makautPapers } from '../data/makaut_papers';
 import QuestionEditor from '../components/QuestionEditor';
 import toast, { Toaster } from 'react-hot-toast';
 import { db } from '../lib/adapters';
@@ -61,6 +68,103 @@ export default function QuestionPaperPageMUI() {
   const university = universities.find((uni) => uni.id === universityId);
   const course = university?.courses.find((c) => c.id === courseId);
   const semesterNumber = parseInt(semester || '0', 10);
+
+  const subjectsList = course?.subjects?.[semesterNumber] || [];
+  const staticSubject = subjectsList.find(sub => sub.question.replace(/ /g, '-').toLowerCase() === subjectName);
+
+  // Look up subject details in the crawled database if not found statically
+  const crawledSubjectInfo = React.useMemo(() => {
+    if (staticSubject) return staticSubject;
+    const paper = makautPapers.find(p => p.id.toLowerCase() === subjectName?.toLowerCase());
+    if (paper) {
+      return {
+        question: paper.title.replace(/-/g, ' ').replace(/\b\w/g, (l) => l.toUpperCase()),
+        code: paper.code,
+        type: 'Theory',
+        year: paper.year
+      };
+    }
+    return null;
+  }, [staticSubject, subjectName]);
+
+  const subject = staticSubject || crawledSubjectInfo;
+
+  const [selectedYear, setSelectedYear] = useState('2026');
+  const [checkingLink, setCheckingLink] = useState(false);
+  const [linkExists, setLinkExists] = useState<boolean | null>(null);
+
+  const getBackendBaseUrl = () => {
+    const webhookUrl = import.meta.env.VITE_WEBHOOK_URL || 'http://localhost:8000/webhook/process-pdf';
+    try {
+      const url = new URL(webhookUrl);
+      return `${url.protocol}//${url.host}`;
+    } catch (e) {
+      return 'http://localhost:8000';
+    }
+  };
+
+  const getMakautLink = (year: string) => {
+    if (!subject) return '';
+    
+    // Look up directly in makautPapers database if available
+    const paper = makautPapers.find(p => {
+      const matchSlug = p.id.toLowerCase() === subjectName?.toLowerCase() ||
+                        (subject.code && p.code.toLowerCase() === subject.code.toLowerCase());
+      return matchSlug && p.year === year;
+    });
+    
+    if (paper) return paper.pdfUrl;
+    
+    // Fallback URL generator
+    if (!course || !subject.code) return '';
+    const courseSlug = course.name.toLowerCase().replace(/[^a-z0-9]/g, '');
+    const subjectSlug = subject.question
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/(^-|-$)/g, '');
+    const codeSlug = subject.code.toLowerCase();
+    return `https://www.makaut.com/papers/${courseSlug}-${semesterNumber}-sem-${subjectSlug}-${codeSlug}-${year}.pdf`;
+  };
+
+  const currentDownloadUrl = getMakautLink(selectedYear);
+
+  useEffect(() => {
+    if (!currentDownloadUrl) return;
+    
+    let active = true;
+    const checkUrl = async () => {
+      setCheckingLink(true);
+      setLinkExists(null);
+      try {
+        const baseUrl = getBackendBaseUrl();
+        const res = await fetch(`${baseUrl}/api/makaut/verify?url=${encodeURIComponent(currentDownloadUrl)}`);
+        const data = await res.json();
+        if (active) {
+          setLinkExists(data.exists);
+        }
+      } catch (err) {
+        console.error('Failed to verify paper link', err);
+        if (active) {
+          setLinkExists(null);
+        }
+      } finally {
+        if (active) {
+          setCheckingLink(false);
+        }
+      }
+    };
+
+    const timer = setTimeout(() => {
+      checkUrl();
+    }, 500);
+
+    return () => {
+      active = false;
+      clearTimeout(timer);
+    };
+  }, [currentDownloadUrl]);
+
+  const isMakaut = university?.shortName === 'MAKAUT' || university?.id === '8';
 
   // Reset dataLoaded flag when route parameters change
   useEffect(() => {
@@ -184,7 +288,7 @@ export default function QuestionPaperPageMUI() {
     }
   }, [dataLoaded]);
 
-  if (!university || !course || !semesterNumber || !course.subjects || !course.subjects[semesterNumber]) {
+  if (!university || !course || !semesterNumber || semesterNumber < 1 || semesterNumber > course.semesters) {
     return (
       <Container sx={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography variant="h6" color="text.secondary">
@@ -194,7 +298,7 @@ export default function QuestionPaperPageMUI() {
     );
   }
 
-  const subjects = course.subjects[semesterNumber] || [];
+  const subjects = course.subjects?.[semesterNumber] || [];
   const isStatic = subjects.some(sub => sub.question.replace(/ /g, '-').toLowerCase() === subjectName);
   const isCustom = customSubjects.includes(subjectName || '');
 
@@ -211,8 +315,9 @@ export default function QuestionPaperPageMUI() {
   };
 
   const isDeletedStatic = deletedStaticSlugs.includes(subjectName || '');
+  const isCrawled = !!crawledSubjectInfo;
 
-  if ((isDeletedStatic || (!isStatic && !isCustom)) && !loading) {
+  if ((isDeletedStatic || (!isStatic && !isCustom && !isCrawled)) && !loading) {
     return (
       <Container sx={{ minHeight: '80vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
         <Typography variant="h6" color="text.secondary">
@@ -445,6 +550,140 @@ export default function QuestionPaperPageMUI() {
             </Card>
           </Fade>
         </Box>
+
+        {isMakaut && subject && (
+          <Fade in={true} timeout={800}>
+            <Card
+              sx={{
+                mb: 4,
+                borderRadius: 3,
+                background: `linear-gradient(135deg, ${alpha(theme.palette.background.paper, 0.95)}, ${alpha(theme.palette.background.paper, 1)})`,
+                backdropFilter: 'blur(10px)',
+                border: `1px solid ${alpha(theme.palette.divider, 0.15)}`,
+                transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                '&:hover': {
+                  boxShadow: `0 12px 24px ${alpha(theme.palette.primary.main, 0.08)}`,
+                }
+              }}
+            >
+              <CardContent sx={{ p: { xs: 3, md: 4 } }}>
+                <Stack direction={{ xs: 'column', md: 'row' }} spacing={3} alignItems={{ xs: 'stretch', md: 'center' }} justifyContent="space-between">
+                  <Box>
+                    <Typography variant="h6" fontWeight="bold" gutterBottom sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                      <CloudDownload color="primary" />
+                      Download Original Question Paper
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                      Access the official MAKAUT exam papers archive directly from our integrated repository links.
+                    </Typography>
+
+                    {subject.code ? (
+                      <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: 'wrap', gap: 1.5 }}>
+                        <Chip
+                          icon={<Code fontSize="small" />}
+                          label={`Subject Code: ${subject.code.toUpperCase()}`}
+                          variant="outlined"
+                          size="small"
+                          sx={{ borderRadius: 1.5 }}
+                        />
+                        <Typography variant="caption" color="text.secondary" sx={{ ml: 1 }}>
+                          Select Year:
+                        </Typography>
+                        {['2026', '2025', '2024', '2023', '2022'].map((year) => (
+                          <Chip
+                            key={year}
+                            label={year}
+                            onClick={() => setSelectedYear(year)}
+                            color={selectedYear === year ? 'primary' : 'default'}
+                            variant={selectedYear === year ? 'filled' : 'outlined'}
+                            size="small"
+                            sx={{ 
+                              cursor: 'pointer',
+                              fontWeight: selectedYear === year ? 600 : 400,
+                              borderRadius: 1.5,
+                              transition: 'all 0.2s ease',
+                              '&:hover': {
+                                backgroundColor: selectedYear === year ? 'primary.main' : alpha(theme.palette.primary.main, 0.08)
+                              }
+                            }}
+                          />
+                        ))}
+                      </Stack>
+                    ) : (
+                      <Chip
+                        icon={<Cancel color="error" fontSize="small" />}
+                        label="Subject Code Missing - Cannot Generate Download URL"
+                        variant="outlined"
+                        color="error"
+                        size="small"
+                        sx={{ borderRadius: 1.5 }}
+                      />
+                    )}
+                  </Box>
+
+                  {subject.code && (
+                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'stretch', md: 'flex-end' }, gap: 1, minWidth: { md: 240 } }}>
+                      {/* Status Indicator */}
+                      <Stack direction="row" spacing={1} alignItems="center" justifyContent={{ xs: 'center', md: 'flex-end' }} sx={{ mb: 1 }}>
+                        {checkingLink ? (
+                          <>
+                            <CircularProgress size={14} thickness={6} />
+                            <Typography variant="caption" color="text.secondary">Verifying link...</Typography>
+                          </>
+                        ) : linkExists === true ? (
+                          <>
+                            <CheckCircle sx={{ fontSize: 16, color: 'success.main' }} />
+                            <Typography variant="caption" color="success.main" fontWeight="medium">Verified Available</Typography>
+                          </>
+                        ) : linkExists === false ? (
+                          <>
+                            <Cancel sx={{ fontSize: 16, color: 'warning.main' }} />
+                            <Typography variant="caption" color="warning.main" fontWeight="medium">Not Found on makaut.com</Typography>
+                          </>
+                        ) : (
+                          <>
+                            <HourglassEmpty sx={{ fontSize: 16, color: 'text.secondary' }} />
+                            <Typography variant="caption" color="text.secondary">Verification pending</Typography>
+                          </>
+                        )}
+                      </Stack>
+
+                      <Button
+                        variant="contained"
+                        color={linkExists === false ? 'warning' : 'primary'}
+                        startIcon={<CloudDownload />}
+                        endIcon={<OpenInNew />}
+                        href={currentDownloadUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        disabled={!currentDownloadUrl}
+                        sx={{
+                          borderRadius: 2,
+                          textTransform: 'none',
+                          fontWeight: 600,
+                          py: 1.2,
+                          px: 3,
+                          boxShadow: theme.palette.mode === 'dark' 
+                            ? `0 4px 20px ${alpha(theme.palette.primary.main, 0.2)}`
+                            : `0 4px 20px ${alpha(theme.palette.primary.main, 0.3)}`,
+                          '&:hover': {
+                            transform: 'translateY(-2px)',
+                            boxShadow: theme.palette.mode === 'dark'
+                              ? `0 6px 24px ${alpha(theme.palette.primary.main, 0.3)}`
+                              : `0 6px 24px ${alpha(theme.palette.primary.main, 0.4)}`,
+                          },
+                          transition: 'all 0.2s ease-in-out'
+                        }}
+                      >
+                        Download PDF ({selectedYear})
+                      </Button>
+                    </Box>
+                  )}
+                </Stack>
+              </CardContent>
+            </Card>
+          </Fade>
+        )}
 
         {/* Content Section */}
         <Slide direction="up" in={true} timeout={800}>

@@ -538,6 +538,26 @@ async function processPDFAsync(processingId, fileUrl, filename, metadata, paperI
     }
 }
 
+// MAKAUT question paper link verification endpoint
+app.get('/api/makaut/verify', async (req, res) => {
+    const { url } = req.query;
+    if (!url || !url.startsWith('https://www.makaut.com/papers/')) {
+        return res.status(400).json({ error: 'Invalid URL. Must be a MAKAUT papers link.' });
+    }
+
+    try {
+        const response = await fetch(url, { method: 'HEAD' });
+        if (response.ok) {
+            return res.json({ exists: true });
+        } else {
+            return res.json({ exists: false, status: response.status });
+        }
+    } catch (error) {
+        console.error('Error verifying link:', error);
+        return res.status(500).json({ exists: false, error: 'Failed to verify URL' });
+    }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({

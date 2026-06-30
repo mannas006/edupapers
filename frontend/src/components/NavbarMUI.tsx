@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar,
   Toolbar,
@@ -7,8 +7,6 @@ import {
   IconButton,
   Menu,
   MenuItem,
-  TextField,
-  InputAdornment,
   Box,
   Avatar,
   Chip,
@@ -24,10 +22,6 @@ import {
   useTheme,
   useMediaQuery,
   Paper,
-  ClickAwayListener,
-  Popper,
-  Grow,
-  MenuList,
   alpha,
 } from '@mui/material';
 import {
@@ -37,7 +31,6 @@ import {
   Login as LoginIcon,
   Logout as LogoutIcon,
   Person as PersonIcon,
-  Search as SearchIcon,
   Menu as MenuIcon,
   Close as CloseIcon,
   Info as InfoIcon,
@@ -50,9 +43,6 @@ import { useNavigate, Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../contexts/AuthContext';
 import { useDarkMode } from '../contexts/DarkModeContext';
-import useDebounce from '../hooks/useDebounce';
-import { allSearchableSubjects } from '../data/universities';
-import type { SearchableSubject } from '../types';
 import { db } from '../lib/adapters';
 
 export default function Navbar() {
@@ -67,12 +57,6 @@ export default function Navbar() {
   const [profileRefreshKey, setProfileRefreshKey] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [anchorElUser, setAnchorElUser] = useState<null | HTMLElement>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<SearchableSubject[]>([]);
-  const [searchOpen, setSearchOpen] = useState(false);
-  const searchRef = useRef<HTMLDivElement>(null);
-  
-  const debouncedSearchQuery = useDebounce(searchQuery, 300);
 
   // Effects
   useEffect(() => {
@@ -140,22 +124,6 @@ export default function Navbar() {
     };
   }, []);
 
-  useEffect(() => {
-    if (debouncedSearchQuery) {
-      const lowerCaseQuery = debouncedSearchQuery.toLowerCase();
-      const filteredResults = allSearchableSubjects.filter(subject =>
-        subject.subjectName.toLowerCase().includes(lowerCaseQuery) ||
-        subject.universityName.toLowerCase().includes(lowerCaseQuery) ||
-        subject.courseName.toLowerCase().includes(lowerCaseQuery)
-      );
-      setSearchResults(filteredResults.slice(0, 8)); // Limit results
-      setSearchOpen(true);
-    } else {
-      setSearchResults([]);
-      setSearchOpen(false);
-    }
-  }, [debouncedSearchQuery]);
-
   // Handlers
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
@@ -175,13 +143,6 @@ export default function Navbar() {
     handleUserMenuClose();
     await logout();
     navigate('/');
-  };
-
-  const handleSearchResultClick = (result: SearchableSubject) => {
-    const url = `/university/${result.universityId}/course/${result.courseId}/semester/${result.semester}/${result.subjectName.replace(/ /g, '-').toLowerCase()}`;
-    navigate(url);
-    setSearchQuery('');
-    setSearchOpen(false);
   };
 
   const handleDarkModeToggle = (event: React.MouseEvent<HTMLButtonElement>) => {
@@ -224,22 +185,6 @@ export default function Navbar() {
           </Typography>
         </Box>
         
-        {/* Mobile Search */}
-        <TextField
-          fullWidth
-          size="small"
-          placeholder="Search subjects..."
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <SearchIcon />
-              </InputAdornment>
-            ),
-          }}
-          sx={{ mb: 2 }}
-        />
       </Box>
 
       <Divider />
@@ -436,100 +381,6 @@ export default function Navbar() {
                 </IconButton>
               </Tooltip>
 
-              {/* Desktop Search */}
-              <Box sx={{ position: 'relative', mr: 2 }} ref={searchRef}>
-                <TextField
-                  size="small"
-                  placeholder="Search subjects..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  InputProps={{
-                    startAdornment: (
-                      <InputAdornment position="start">
-                        <SearchIcon />
-                      </InputAdornment>
-                    ),
-                  }}
-                  sx={{ 
-                    width: 320,
-                    '& .MuiOutlinedInput-root': {
-                      backgroundColor: theme.palette.mode === 'dark'
-                        ? alpha(theme.palette.background.paper, 0.8)
-                        : alpha(theme.palette.common.white, 0.8),
-                    }
-                  }}
-                />
-
-                {/* Search Results Dropdown */}
-                <Popper
-                  open={searchOpen && searchResults.length > 0}
-                  anchorEl={searchRef.current}
-                  placement="bottom-start"
-                  transition
-                  style={{ zIndex: 1300, width: 320 }}
-                >
-                  {({ TransitionProps }) => (
-                    <Grow {...TransitionProps}>
-                      <Paper 
-                        elevation={8}
-                        sx={{ 
-                          mt: 1, 
-                          maxHeight: 400, 
-                          overflow: 'auto',
-                          border: `1px solid ${theme.palette.divider}`
-                        }}
-                      >
-                        <ClickAwayListener onClickAway={() => setSearchOpen(false)}>
-                          <MenuList dense>
-                            {searchResults.map((result, index) => (
-                              <MenuItem
-                                key={index}
-                                onClick={() => handleSearchResultClick(result)}
-                                sx={{ 
-                                  flexDirection: 'column', 
-                                  alignItems: 'flex-start',
-                                  py: 1.5
-                                }}
-                              >
-                                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                                  {result.subjectName}
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1, mt: 0.5 }}>
-                                  <Chip 
-                                    label={result.universityName} 
-                                    size="small" 
-                                    variant="outlined"
-                                    sx={{ fontSize: '0.7rem', height: 20 }}
-                                  />
-                                  <Chip 
-                                    label={result.courseName} 
-                                    size="small" 
-                                    variant="outlined"
-                                    sx={{ fontSize: '0.7rem', height: 20 }}
-                                  />
-                                  <Chip 
-                                    label={`Sem ${result.semester}`} 
-                                    size="small" 
-                                    variant="outlined"
-                                    sx={{ fontSize: '0.7rem', height: 20 }}
-                                  />
-                                </Box>
-                              </MenuItem>
-                            ))}
-                            {searchQuery && searchResults.length === 0 && (
-                              <MenuItem disabled>
-                                <Typography color="text.secondary">
-                                  No results found
-                                </Typography>
-                              </MenuItem>
-                            )}
-                          </MenuList>
-                        </ClickAwayListener>
-                      </Paper>
-                    </Grow>
-                  )}
-                </Popper>
-              </Box>
             </>
           )}
 

@@ -30,23 +30,30 @@ function AppContent() {
     <>
       <ThemeProvider theme={theme}>
         <CssBaseline />
-        <Box sx={{ minHeight: '100vh', backgroundColor: 'background.default' }}>
+        <Box sx={{ 
+          minHeight: '100vh', 
+          display: 'flex', 
+          flexDirection: 'column', 
+          backgroundColor: 'background.default' 
+        }}>
           <NavbarMUI />
           
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/login" element={<LoginMUI />} />
-            <Route path="/upload" element={<UploadMUI />} />
-          <Route path="/profile" element={<ProfileMUI />} />
-          <Route path="/university/:universityId" element={<UniversityPageMUI />} />
-          <Route path="/university/:universityId/course/:courseId" element={<CoursePageMUI />} />
-          <Route path="/university/:universityId/course/:courseId/semester/:semester" element={<SubjectPageMUI />} />
-          <Route path="/university/:universityId/course/:courseId/semester/:semester/:subjectName" element={<QuestionPaperPageMUI />} />
-          <Route path="/about" element={<AboutUsMUI />} />
-          <Route path="/contact" element={<ContactUsMUI />} />
-        </Routes>
+          <Box sx={{ flexGrow: 1, display: 'flex', flexDirection: 'column' }}>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<LoginMUI />} />
+              <Route path="/upload" element={<UploadMUI />} />
+              <Route path="/profile" element={<ProfileMUI />} />
+              <Route path="/university/:universityId" element={<UniversityPageMUI />} />
+              <Route path="/university/:universityId/course/:courseId" element={<CoursePageMUI />} />
+              <Route path="/university/:universityId/course/:courseId/semester/:semester" element={<SubjectPageMUI />} />
+              <Route path="/university/:universityId/course/:courseId/semester/:semester/:subjectName" element={<QuestionPaperPageMUI />} />
+              <Route path="/about" element={<AboutUsMUI />} />
+              <Route path="/contact" element={<ContactUsMUI />} />
+            </Routes>
+          </Box>
 
-        <Box component="footer" sx={{ backgroundColor: 'background.paper', mt: 8, py: 4 }}>
+        <Box component="footer" sx={{ backgroundColor: 'background.default', borderTop: '1px solid', borderColor: 'divider', mt: { xs: 3, md: 4 }, py: 4 }}>
           <Box sx={{ maxWidth: '1200px', mx: 'auto', px: 3, textAlign: 'center' }}>
             <Box sx={{ color: 'text.secondary', fontSize: '0.875rem' }}>
               © {currentYear} EduPapers. All rights reserved. | Developed by{' '}

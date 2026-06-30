@@ -36,6 +36,7 @@ import {
   Delete as DeleteIcon
 } from '@mui/icons-material';
 import { universities } from '../data/universities';
+import { makautPapers } from '../data/makaut_papers';
 import { db } from '../lib/adapters';
 import { useAuth } from '../contexts/AuthContext';
 import toast, { Toaster } from 'react-hot-toast';
@@ -270,7 +271,46 @@ export default function SubjectPageMUI() {
     };
   });
 
-  // Filter out any custom subjects that are already defined statically in active static subjects
+  // Dynamically load subjects from the 4553 crawled papers
+  const crawledSubjectsForSem = React.useMemo(() => {
+    if (!course) return [];
+    
+    // Normalize course name (e.g. "B.Tech" -> "BTECH", "BCA" -> "BCA")
+    const normalizedCourseName = course.name.toUpperCase().replace(/[^A-Z0-9]/g, '');
+    
+    const matchingPapers = makautPapers.filter(paper => {
+      const paperCourse = paper.course.toUpperCase().replace(/[^A-Z0-9]/g, '');
+      return paperCourse === normalizedCourseName && paper.semester === semesterNumber;
+    });
+    
+    // Extract unique subjects based on subject code or slugified name
+    const uniqueSubjectsMap = new Map<string, { question: string; code: string; year: string }>();
+    matchingPapers.forEach(paper => {
+      const titleCleaned = paper.title
+        .replace(/-/g, ' ')
+        .replace(/\b\w/g, (l) => l.toUpperCase());
+      
+      const slug = paper.id.toLowerCase();
+      if (!uniqueSubjectsMap.has(slug)) {
+        uniqueSubjectsMap.set(slug, {
+          question: titleCleaned,
+          code: paper.code,
+          year: paper.year
+        });
+      }
+    });
+    
+    return Array.from(uniqueSubjectsMap.entries()).map(([slug, details]) => ({
+      question: details.question,
+      type: 'Theory',
+      year: details.year,
+      code: details.code.toLowerCase(),
+      isCustom: false,
+      slug: slug
+    }));
+  }, [course, semesterNumber]);
+
+  // Filter out any custom subjects that are already defined statically
   const uniqueCustomSubjects = customSubjects.filter(
     name => !activeStaticSlugs.has(name)
   );
@@ -287,7 +327,21 @@ export default function SubjectPageMUI() {
     };
   });
 
-  const allSubjects = [...mappedStatic, ...mappedCustom];
+  // Merge subjects from all three sources, deduplicating by slug
+  const allSubjectsMap = new Map<string, any>();
+  mappedStatic.forEach(sub => allSubjectsMap.set(sub.slug, sub));
+  crawledSubjectsForSem.forEach(sub => {
+    if (!allSubjectsMap.has(sub.slug)) {
+      allSubjectsMap.set(sub.slug, sub);
+    }
+  });
+  mappedCustom.forEach(sub => {
+    if (!allSubjectsMap.has(sub.slug)) {
+      allSubjectsMap.set(sub.slug, sub);
+    }
+  });
+
+  const allSubjects = Array.from(allSubjectsMap.values());
 
   const handleSubjectClick = (subject: any) => {
     const slug = subject.isCustom ? subject.slug : subject.question.replace(/ /g, '-').toLowerCase();
