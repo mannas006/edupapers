@@ -19,7 +19,9 @@ import {
   ListItem,
   Divider,
   Paper,
-  Stack
+  Stack,
+  Menu,
+  MenuItem
 } from '@mui/material';
 import { 
   School, 
@@ -30,7 +32,8 @@ import {
   Event, 
   Campaign,
   Code,
-  TrendingUp
+  TrendingUp,
+  KeyboardArrowDown
 } from '@mui/icons-material';
 import { Link } from 'react-router-dom';
 import { universities } from '../data/universities';
@@ -194,6 +197,22 @@ export default function Home() {
   const [makautSearchQuery, setMakautSearchQuery] = useState('');
   const [makautActiveCourse, setMakautActiveCourse] = useState('All');
   const [makautVisibleCount, setMakautVisibleCount] = useState(6);
+  const [moreAnchorEl, setMoreAnchorEl] = useState<null | HTMLElement>(null);
+
+  const popularCourses = useMemo(() => ['BTECH', 'BCA', 'BBA', 'MBA', 'MCA', 'MTECH', 'BSC', 'BPHARM', 'MSC'], []);
+
+  const otherCourses = useMemo(() => {
+    const set = new Set<string>();
+    makautPapers.forEach(p => {
+      if (p.course) {
+        const c = p.course.toUpperCase();
+        if (!popularCourses.includes(c)) {
+          set.add(c);
+        }
+      }
+    });
+    return Array.from(set).sort();
+  }, [popularCourses]);
 
   // Find the single MAKAUT university from config
   const makautUniversity = useMemo(() => {
@@ -782,7 +801,7 @@ export default function Home() {
             {/* Course filter badges */}
             <Box 
               sx={{ 
-                flex: '0 0 auto', 
+                flex: '1 1 auto', 
                 width: { xs: '100%', lg: 'auto' },
                 display: 'flex',
                 justifyContent: { xs: 'flex-start', lg: 'flex-end' }
@@ -791,16 +810,12 @@ export default function Home() {
               <Stack 
                 direction="row" 
                 sx={{ 
-                  overflowX: 'auto',
-                  flexWrap: { xs: 'nowrap', lg: 'wrap' },
+                  flexWrap: 'wrap',
                   gap: 1.2,
                   justifyContent: { xs: 'flex-start', lg: 'flex-end' },
                   width: '100%',
-                  maxWidth: { lg: 580 },
+                  maxWidth: { lg: 680 },
                   pb: { xs: 1.5, lg: 0 },
-                  '&::-webkit-scrollbar': { display: 'none' },
-                  msOverflowStyle: 'none',
-                  scrollbarWidth: 'none',
                 }}
               >
                 {['All', 'BTECH', 'BCA', 'BBA', 'MBA', 'MCA', 'MTECH', 'BSC', 'BPHARM', 'MSC'].map(course => {
@@ -848,6 +863,102 @@ export default function Home() {
                     </Button>
                   );
                 })}
+
+                {/* More Courses Dropdown Button */}
+                {otherCourses.length > 0 && (() => {
+                  const isMoreActive = otherCourses.includes(makautActiveCourse);
+                  return (
+                    <>
+                      <Button
+                        onClick={(e) => setMoreAnchorEl(e.currentTarget)}
+                        endIcon={<KeyboardArrowDown />}
+                        sx={{
+                          borderRadius: '12px',
+                          textTransform: 'none',
+                          fontWeight: 700,
+                          fontSize: '0.82rem',
+                          py: 0.8,
+                          px: 2,
+                          minWidth: 'auto',
+                          whiteSpace: 'nowrap',
+                          transition: 'all 0.25s cubic-bezier(0.4, 0, 0.2, 1)',
+                          ...(isMoreActive ? {
+                            background: `linear-gradient(135deg, ${theme.palette.primary.main} 0%, ${theme.palette.secondary.main} 100%)`,
+                            color: 'white',
+                            boxShadow: `0 6px 18px ${alpha(theme.palette.primary.main, 0.25)}`,
+                            border: 'none',
+                            '&:hover': {
+                              boxShadow: `0 8px 22px ${alpha(theme.palette.primary.main, 0.35)}`,
+                              transform: 'translateY(-1.5px)'
+                            }
+                          } : {
+                            bgcolor: alpha(theme.palette.background.paper, 0.4),
+                            color: 'text.secondary',
+                            border: `1px solid ${alpha(theme.palette.divider, 0.08)}`,
+                            '&:hover': {
+                              bgcolor: alpha(theme.palette.primary.main, 0.04),
+                              color: 'primary.main',
+                              borderColor: alpha(theme.palette.primary.main, 0.18),
+                              transform: 'translateY(-1.5px)'
+                            }
+                          })
+                        }}
+                      >
+                        {isMoreActive ? makautActiveCourse : 'More Courses'}
+                      </Button>
+                      <Menu
+                        anchorEl={moreAnchorEl}
+                        open={Boolean(moreAnchorEl)}
+                        onClose={() => setMoreAnchorEl(null)}
+                        slotProps={{
+                          paper: {
+                            sx: {
+                              maxHeight: 300,
+                              width: '20ch',
+                              borderRadius: '12px',
+                              mt: 1,
+                              border: `1px solid ${alpha(theme.palette.divider, 0.1)}`,
+                              boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+                              background: alpha(theme.palette.background.paper, 0.98),
+                              backdropFilter: 'blur(10px)',
+                            }
+                          }
+                        }}
+                      >
+                        {otherCourses.map((course) => (
+                          <MenuItem
+                            key={course}
+                            selected={makautActiveCourse === course}
+                            onClick={() => {
+                              setMakautActiveCourse(course);
+                              setMakautVisibleCount(6);
+                              setMoreAnchorEl(null);
+                            }}
+                            sx={{
+                              fontWeight: makautActiveCourse === course ? 700 : 500,
+                              fontSize: '0.85rem',
+                              borderRadius: '8px',
+                              mx: 1,
+                              my: 0.3,
+                              color: makautActiveCourse === course ? 'primary.main' : 'text.primary',
+                              '&.Mui-selected': {
+                                bgcolor: alpha(theme.palette.primary.main, 0.08),
+                                '&:hover': {
+                                  bgcolor: alpha(theme.palette.primary.main, 0.12),
+                                }
+                              },
+                              '&:hover': {
+                                bgcolor: alpha(theme.palette.primary.main, 0.04),
+                              }
+                            }}
+                          >
+                            {course}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  );
+                })()}
               </Stack>
             </Box>
           </Box>
@@ -855,7 +966,7 @@ export default function Home() {
 
 
           {/* Paper Grid */}
-          <Grid container spacing={3.5}>
+          <Grid container spacing={{ xs: 2.5, sm: 3.5 }}>
             {filteredMakautPapers.slice(0, makautVisibleCount).map((paper) => (
               <Grid item xs={12} sm={6} md={4} key={paper.id}>
                 <Card
@@ -875,7 +986,7 @@ export default function Home() {
                     }
                   }}
                 >
-                  <CardContent sx={{ p: 3.5, flexGrow: 1 }}>
+                  <CardContent sx={{ p: { xs: 2.5, sm: 3.5 }, flexGrow: 1 }}>
                     <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 2.5 }}>
                       <Chip
                         label={paper.course}
@@ -940,7 +1051,7 @@ export default function Home() {
                     </Stack>
                   </CardContent>
                   
-                  <CardActions sx={{ px: 3.5, pb: 3.5, pt: 0 }}>
+                  <CardActions sx={{ px: { xs: 2.5, sm: 3.5 }, pb: { xs: 2.5, sm: 3.5 }, pt: 0 }}>
                     <Button
                       fullWidth
                       variant="contained"
